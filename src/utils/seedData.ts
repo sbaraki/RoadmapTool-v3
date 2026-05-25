@@ -1,5 +1,25 @@
 import type { Gallery, PhaseType, ExhibitionProject, ProjectPhase, ProjectCheckpoint } from '../types'
 import { generateId } from './id'
+import { DEFAULT_PHASE_TYPES } from '../data/defaults'
+
+function canonicalPhaseType(rawLabel: string): { typeId: string; label: string } | null {
+  const key = rawLabel.toLowerCase().replace(/[^a-z]/g, '')
+  const map: Record<string, number> = {
+    ideadev: 0,
+    initiation: 0,
+    contentdevelopment: 1,
+    contentdev: 1,
+    designdevelopment: 2,
+    designdev: 2,
+    implementation: 3,
+    deinstall: 5,
+    newphase: 5,
+  }
+  const idx = map[key]
+  if (idx === undefined) return null
+  const pt = DEFAULT_PHASE_TYPES[idx]
+  return { typeId: pt.id, label: pt.label }
+}
 
 const CSV_DATA = `Project ID,Project Title,Status,Gallery,Item Type,Item Name,Start Date,End Date,Duration (Months),Description
 EXH777,DEATH: LIFE'S GREATEST MYSTERY,Open to Public,FEATURE GALLERY,Project Main,DEATH: LIFE'S GREATEST MYSTERY,2026-02-25,2026-09-07,6.4,
@@ -108,17 +128,8 @@ function parseCsv(text: string): CsvRow[] {
   return rows
 }
 
-const PHASE_COLORS = [
-  '#7f8f2a', '#4f8bb8', '#9aad25', '#ed8a24', '#10b981', '#f2b95b',
-  '#a855f7', '#ec4899', '#06b6d4', '#f97316',
-]
-
 function galleryId(name: string): string {
   return `gallery_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`
-}
-
-function phaseTypeId(label: string): string {
-  return `pt_${label.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`
 }
 
 export interface SeedData {
@@ -138,13 +149,8 @@ export function generateSeedData(): SeedData {
     kind: (name === 'PERMANENT GALLERIES' ? 'permanent' : 'temporary') as 'permanent' | 'temporary',
   }))
 
-  // Collect unique phase labels (from Phase (Pre) and Phase (Post) rows)
-  const phaseLabels = [...new Set(rows.filter(r => r.itemType.startsWith('Phase')).map(r => r.itemName))]
-  const phaseTypes: PhaseType[] = phaseLabels.map((label, idx) => ({
-    id: phaseTypeId(label),
-    label,
-    color: PHASE_COLORS[idx % PHASE_COLORS.length],
-  }))
+  // Use the canonical phase types from defaults
+  const phaseTypes: PhaseType[] = DEFAULT_PHASE_TYPES
 
   // Group rows by project
   // Sequential approach: each "Project Main" row starts a new project
@@ -179,12 +185,12 @@ export function generateSeedData(): SeedData {
       startDate && endDate && startDate !== endDate ? 'range' : 'single-date'
 
     const phases: ProjectPhase[] = group.phases.map((row) => {
-      const pt = phaseTypes.find(p => p.label === row.itemName)
+      const canonical = canonicalPhaseType(row.itemName)
       return {
         id: generateId(),
-        label: row.itemName,
+        label: canonical?.label ?? row.itemName,
         durationMonths: parseFloat(row.durationMonths) || 1,
-        typeId: pt?.id ?? phaseTypes[0]?.id ?? '',
+        typeId: canonical?.typeId ?? phaseTypes[0]?.id ?? '',
       }
     })
 
