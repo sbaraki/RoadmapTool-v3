@@ -124,7 +124,9 @@ export function Timeline() {
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="relative z-10">
                 {galleries.map(gallery => {
-                  const galleryProjects = exhibitions.filter(p => p.gallery === gallery.name)
+                  const galleryProjects = exhibitions.filter(p =>
+                    p.gallery === gallery.name && p.startDate <= timelineEndDate && p.endDate >= timelineStartDate
+                  )
                   return (
                     <GalleryLane
                       key={gallery.id}

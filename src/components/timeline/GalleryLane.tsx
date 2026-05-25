@@ -85,13 +85,15 @@ export function GalleryLane({
   const perProjectMilestones = useMemo(() => {
     const map = new Map<string, { lanes: AssignedLane[]; maxLanes: number; bandHeight: number }>()
     for (const project of sortedProjects) {
-      const cps = project.checkpoints ?? []
+      const cps = (project.checkpoints ?? []).filter(
+        cp => cp.date >= timelineStart && cp.date <= timelineEnd
+      )
       if (showMilestones && cps.length > 0) {
         map.set(project.id, computeMilestoneLanes(cps, timelineStart, monthWidth))
       }
     }
     return map
-  }, [sortedProjects, timelineStart, monthWidth, showMilestones])
+  }, [sortedProjects, timelineStart, timelineEnd, monthWidth, showMilestones])
 
   function handleDoubleClick(e: React.MouseEvent<HTMLElement>) {
     if ((e.target as HTMLElement).closest('[role="button"]')) return
@@ -113,7 +115,9 @@ export function GalleryLane({
     const left = dateToPixel(timelineStart, project.startDate, monthWidth)
     const w = dateToPixel(project.startDate, project.endDate, monthWidth)
     const showLabel = w >= 100
-    const milestones = project.checkpoints ?? []
+    const milestones = (project.checkpoints ?? []).filter(
+      cp => cp.date >= timelineStart && cp.date <= timelineEnd
+    )
     const projectStartPx = left
     return (
       <div
@@ -167,11 +171,13 @@ export function GalleryLane({
           </span>
           <span className="text-mono-data text-xs text-slate-muted/60">{projects.length}</span>
         </div>
-        <div className="relative" style={{ width: totalWidth, minHeight: 44 }} onDoubleClick={handleDoubleClick}>
+        <div className="relative overflow-hidden" style={{ width: totalWidth, minHeight: 44 }} onDoubleClick={handleDoubleClick}>
           {sortedProjects.map(project => {
             if (project.scheduleMode === 'single-date') {
               const left = dateToPixel(timelineStart, project.startDate, monthWidth)
-              const milestones = project.checkpoints ?? []
+              const milestones = (project.checkpoints ?? []).filter(
+                cp => cp.date >= timelineStart && cp.date <= timelineEnd
+              )
               return (
                 <div
                   key={project.id}

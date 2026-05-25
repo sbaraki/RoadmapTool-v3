@@ -410,6 +410,7 @@ body {
 .lane-row {
   position: relative;
   height: 68px;
+  overflow: hidden;
   transition: background 120ms;
 }
 .lane-row:hover {
@@ -425,6 +426,7 @@ body {
 /* Each project + its milestones forms a visual block */
 .project-block {
   border-bottom: 1px solid var(--color-outline-variant);
+  overflow: hidden;
 }
 
 /* ── Milestone markers ── */
