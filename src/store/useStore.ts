@@ -10,10 +10,10 @@ import { createInitialHistoryState, createSnapshot, type HistorySnapshot } from 
 import { generateId } from '../utils/id'
 import { addMonthsToString, formatDate } from '../utils/date'
 import { DEFAULT_GALLERIES, DEFAULT_PHASE_TYPES } from '../data/defaults'
-import { pushToGithub, pullFromGithub } from '../utils/githubSync'
+import { pushToGist, pullFromGist } from '../utils/githubSync'
 
 const STORAGE_KEY = 'portfolio_tool_v2'
-const GITHUB_SETTINGS_KEY = 'portfolio_tool_github'
+const GIST_SETTINGS_KEY = 'portfolio_tool_gist'
 
 function phaseKey(label: string): string {
   return label.toLowerCase().replace(/^\d+\.\s*/, '').trim()
@@ -70,8 +70,7 @@ interface StoreState {
   settingsOpen: boolean
 
   githubToken: string
-  githubRepo: string
-  githubFilepath: string
+  githubGistId: string
   syncStatus: 'idle' | 'syncing' | 'pulling' | 'error' | 'success'
   syncError: string | null
 
@@ -127,8 +126,7 @@ interface StoreState {
   setSettingsOpen: (open: boolean) => void
 
   setGithubToken: (token: string) => void
-  setGithubRepo: (repo: string) => void
-  setGithubFilepath: (path: string) => void
+  setGithubGistId: (id: string) => void
   syncToGithub: () => Promise<void>
   pullFromGithub: () => Promise<void>
 
@@ -136,17 +134,16 @@ interface StoreState {
   saveToStorage: () => void
 }
 
-function saveGithubSettings(state: { githubToken: string; githubRepo: string; githubFilepath: string }) {
-  localStorage.setItem(GITHUB_SETTINGS_KEY, JSON.stringify({
+function saveGithubSettings(state: { githubToken: string; githubGistId: string }) {
+  localStorage.setItem(GIST_SETTINGS_KEY, JSON.stringify({
     githubToken: state.githubToken,
-    githubRepo: state.githubRepo,
-    githubFilepath: state.githubFilepath,
+    githubGistId: state.githubGistId,
   }))
 }
 
 function loadGithubSettings() {
   try {
-    const raw = localStorage.getItem(GITHUB_SETTINGS_KEY)
+    const raw = localStorage.getItem(GIST_SETTINGS_KEY)
     if (!raw) return {}
     return JSON.parse(raw)
   } catch {
@@ -179,8 +176,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   sidebarOpen: true,
   settingsOpen: false,
   githubToken: '',
-  githubRepo: '',
-  githubFilepath: 'data/portfolio-timeline.json',
+  githubGistId: '',
   syncStatus: 'idle',
   syncError: null,
 
@@ -540,17 +536,20 @@ export const useStore = create<StoreState>()((set, get) => ({
   setSettingsOpen: (open) => set({ settingsOpen: open }),
 
   setGithubToken: (token) => { set({ githubToken: token }); saveGithubSettings(get()) },
-  setGithubRepo: (repo) => { set({ githubRepo: repo }); saveGithubSettings(get()) },
-  setGithubFilepath: (path) => { set({ githubFilepath: path }); saveGithubSettings(get()) },
+  setGithubGistId: (id) => { set({ githubGistId: id }); saveGithubSettings(get()) },
 
   syncToGithub: async () => {
-    const { githubToken, githubRepo, githubFilepath, saveToStorage } = get()
+    const { githubToken, githubGistId, saveToStorage } = get()
     set({ syncStatus: 'syncing', syncError: null })
     saveToStorage()
     const raw = localStorage.getItem(STORAGE_KEY)
     const data = raw ? JSON.parse(raw) : {}
-    const result = await pushToGithub(data, githubToken, githubRepo, githubFilepath)
+    const result = await pushToGist(data, githubToken, githubGistId || undefined)
     if (result.success) {
+      if (result.gistId && result.gistId !== githubGistId) {
+        set({ githubGistId: result.gistId })
+        saveGithubSettings({ githubToken, githubGistId: result.gistId })
+      }
       set({ syncStatus: 'success' })
     } else {
       set({ syncStatus: 'error', syncError: result.error ?? null })
@@ -558,9 +557,9 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   pullFromGithub: async () => {
-    const { githubToken, githubRepo, githubFilepath } = get()
+    const { githubToken, githubGistId } = get()
     set({ syncStatus: 'pulling', syncError: null })
-    const result = await pullFromGithub(githubToken, githubRepo, githubFilepath)
+    const result = await pullFromGist(githubToken, githubGistId)
     if (result.success && result.data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data))
       set({ ...result.data, syncStatus: 'success', settingsOpen: false })
@@ -598,8 +597,7 @@ export const useStore = create<StoreState>()((set, get) => ({
       if (data.sidebarOpen !== undefined) set({ sidebarOpen: data.sidebarOpen })
       const gh = loadGithubSettings()
       if (gh.githubToken) set({ githubToken: gh.githubToken })
-      if (gh.githubRepo) set({ githubRepo: gh.githubRepo })
-      if (gh.githubFilepath) set({ githubFilepath: gh.githubFilepath })
+      if (gh.githubGistId) set({ githubGistId: gh.githubGistId })
       return true
     } catch {
       return false

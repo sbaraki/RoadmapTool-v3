@@ -11,13 +11,11 @@ export function SettingsModal() {
   const museumName = useStore(s => s.museumName)
   const setMuseumName = useStore(s => s.setMuseumName)
   const githubToken = useStore(s => s.githubToken)
-  const githubRepo = useStore(s => s.githubRepo)
-  const githubFilepath = useStore(s => s.githubFilepath)
+  const githubGistId = useStore(s => s.githubGistId)
   const syncStatus = useStore(s => s.syncStatus)
   const syncError = useStore(s => s.syncError)
   const setGithubToken = useStore(s => s.setGithubToken)
-  const setGithubRepo = useStore(s => s.setGithubRepo)
-  const setGithubFilepath = useStore(s => s.setGithubFilepath)
+  const setGithubGistId = useStore(s => s.setGithubGistId)
   const syncToGithub = useStore(s => s.syncToGithub)
   const pullFromGithub = useStore(s => s.pullFromGithub)
 
@@ -38,8 +36,11 @@ export function SettingsModal() {
         <GalleryEditor />
 
         <div className="border-t border-outline-variant pt-4">
-          <h3 className="text-label-md uppercase text-slate-muted mb-2">GitHub Sync</h3>
+          <h3 className="text-label-md uppercase text-slate-muted mb-2">GitHub Gist Sync</h3>
           <div className="flex flex-col gap-3">
+            <p className="text-body-xs text-slate-muted/80 leading-relaxed">
+              Create a <a className="text-secondary underline" href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">GitHub personal access token</a> with <code className="text-mono-data text-xs bg-surface-container px-1 rounded">gist</code> scope. The first push will create a secret gist automatically.
+            </p>
             <Input
               label="Personal Access Token"
               type="password"
@@ -47,34 +48,30 @@ export function SettingsModal() {
               onChange={e => setGithubToken(e.target.value)}
               placeholder="ghp_..."
             />
-            <Input
-              label="Repository"
-              value={githubRepo}
-              onChange={e => setGithubRepo(e.target.value)}
-              placeholder="username/repo"
-            />
-            <Input
-              label="File Path"
-              value={githubFilepath}
-              onChange={e => setGithubFilepath(e.target.value)}
-              placeholder="data/portfolio-timeline.json"
-            />
+            {githubGistId && (
+              <Input
+                label="Gist ID"
+                value={githubGistId}
+                onChange={e => setGithubGistId(e.target.value)}
+                placeholder="Auto-filled after first push"
+              />
+            )}
             <div className="flex items-center gap-2 pt-1">
               <Button
                 variant="primary"
                 size="sm"
-                disabled={!githubToken || !githubRepo || syncStatus === 'syncing' || syncStatus === 'pulling'}
+                disabled={!githubToken || syncStatus === 'syncing' || syncStatus === 'pulling'}
                 onClick={syncToGithub}
               >
-                {syncStatus === 'syncing' ? 'Pushing...' : 'Push to GitHub'}
+                {syncStatus === 'syncing' ? 'Pushing...' : 'Push to Gist'}
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={!githubToken || !githubRepo || syncStatus === 'syncing' || syncStatus === 'pulling'}
+                disabled={!githubToken || !githubGistId || syncStatus === 'syncing' || syncStatus === 'pulling'}
                 onClick={pullFromGithub}
               >
-                {syncStatus === 'pulling' ? 'Pulling...' : 'Pull from GitHub'}
+                {syncStatus === 'pulling' ? 'Pulling...' : 'Pull from Gist'}
               </Button>
               {syncStatus === 'success' && (
                 <span className="text-label-md text-emerald-700">Done</span>

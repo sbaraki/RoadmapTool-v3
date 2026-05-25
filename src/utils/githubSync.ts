@@ -1,8 +1,14 @@
 const GITHUB_API = 'https://api.github.com'
+const GIST_FILENAME = 'portfolio-data.json'
 
 export interface SyncResult {
   success: boolean
   error?: string
+}
+
+export interface SyncResultWithData extends SyncResult {
+  data?: object
+  gistId?: string
 }
 
 async function githubFetch(path: string, token: string, options?: RequestInit): Promise<Response> {
@@ -16,73 +22,78 @@ async function githubFetch(path: string, token: string, options?: RequestInit): 
   })
 }
 
-export async function pushToGithub(
+export async function pushToGist(
   data: object,
   token: string,
-  repo: string,
-  filePath: string,
-): Promise<SyncResult> {
-  if (!token || !repo || !filePath) {
-    return { success: false, error: 'Token, repo, and file path are required' }
+  gistId?: string,
+): Promise<SyncResult & { gistId?: string }> {
+  if (!token) {
+    return { success: false, error: 'Token is required' }
   }
 
   try {
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
-
-    // Try to get existing file to obtain SHA
-    let sha: string | undefined
-    const getRes = await githubFetch(`/repos/${repo}/contents/${filePath}`, token)
-    if (getRes.ok) {
-      const existing = await getRes.json()
-      sha = existing.sha
-    } else if (getRes.status !== 404) {
-      const err = await getRes.json().catch(() => ({ message: getRes.statusText }))
-      return { success: false, error: err.message ?? 'Failed to check existing file' }
+    const content = JSON.stringify(data, null, 2)
+    const body: Record<string, unknown> = {
+      description: `RAM Exhibition Portfolio — synced ${new Date().toLocaleString()}`,
+      public: false,
+      files: {
+        [GIST_FILENAME]: { content },
+      },
     }
 
-    const res = await githubFetch(`/repos/${repo}/contents/${filePath}`, token, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `Sync portfolio data ${new Date().toISOString().slice(0, 10)}`,
-        content: encoded,
-        sha,
-      }),
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }))
-      return { success: false, error: err.message ?? 'Push failed' }
+    if (gistId) {
+      const res = await githubFetch(`/gists/${gistId}`, token, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }))
+        return { success: false, error: err.message ?? 'Push failed' }
+      }
+      return { success: true, gistId }
+    } else {
+      const res = await githubFetch('/gists', token, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }))
+        return { success: false, error: err.message ?? 'Failed to create gist' }
+      }
+      const gist = await res.json()
+      return { success: true, gistId: gist.id }
     }
-
-    return { success: true }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Unknown error' }
   }
 }
 
-export async function pullFromGithub(
+export async function pullFromGist(
   token: string,
-  repo: string,
-  filePath: string,
-): Promise<SyncResult & { data?: object }> {
-  if (!token || !repo || !filePath) {
-    return { success: false, error: 'Token, repo, and file path are required' }
+  gistId: string,
+): Promise<SyncResultWithData> {
+  if (!token || !gistId) {
+    return { success: false, error: 'Token and gist ID are required' }
   }
 
   try {
-    const res = await githubFetch(`/repos/${repo}/contents/${filePath}`, token)
-
+    const res = await githubFetch(`/gists/${gistId}`, token)
     if (!res.ok) {
       if (res.status === 404) {
-        return { success: false, error: 'No synced data found on GitHub' }
+        return { success: false, error: 'Gist not found' }
       }
       const err = await res.json().catch(() => ({ message: res.statusText }))
       return { success: false, error: err.message ?? 'Pull failed' }
     }
 
-    const json = await res.json()
-    const decoded = JSON.parse(decodeURIComponent(escape(atob(json.content))))
-    return { success: true, data: decoded }
+    const gist = await res.json()
+    const file = gist.files?.[GIST_FILENAME]
+    if (!file?.content) {
+      return { success: false, error: `No ${GIST_FILENAME} found in gist` }
+    }
+
+    const parsed = JSON.parse(file.content)
+    return { success: true, data: parsed, gistId }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : 'Unknown error' }
   }
