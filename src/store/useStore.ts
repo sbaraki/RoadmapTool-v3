@@ -5,15 +5,26 @@ import type {
   ExhibitionProject,
   ProjectCheckpoint,
   ProjectPhase,
+  PortfolioData,
+  ScenarioLibrary,
+  ScenarioSave,
 } from '../types'
 import { createInitialHistoryState, createSnapshot, type HistorySnapshot } from './history'
 import { generateId } from '../utils/id'
 import { addMonthsToString, formatDate } from '../utils/date'
 import { DEFAULT_GALLERIES, DEFAULT_PHASE_TYPES } from '../data/defaults'
-import { pushToGist, pullFromGist } from '../utils/githubSync'
+import {
+  backupScenarioLibrary,
+  getCloudSession,
+  restoreScenarioLibrary,
+  sendMagicLink,
+  signOutCloud,
+} from '../utils/supabaseSync'
 
 const STORAGE_KEY = 'portfolio_tool_v2'
-const GIST_SETTINGS_KEY = 'portfolio_tool_gist'
+const DEFAULT_SCENARIO_NAME = 'Current Plan'
+
+type CloudRestoreMode = 'replace' | 'merge'
 
 function phaseKey(label: string): string {
   return label.toLowerCase().replace(/^\d+\.\s*/, '').trim()
@@ -69,10 +80,14 @@ interface StoreState {
   sidebarOpen: boolean
   settingsOpen: boolean
 
-  githubToken: string
-  githubGistId: string
-  syncStatus: 'idle' | 'syncing' | 'pulling' | 'error' | 'success'
-  syncError: string | null
+  activeScenarioId: string
+  scenarios: ScenarioSave[]
+
+  cloudEmail: string
+  cloudUserEmail: string | null
+  cloudUpdatedAt: string | null
+  cloudStatus: 'idle' | 'loading' | 'sending-link' | 'backing-up' | 'restoring' | 'error' | 'success'
+  cloudError: string | null
 
   history: HistorySnapshot[]
   future: HistorySnapshot[]
@@ -125,30 +140,21 @@ interface StoreState {
   setSidebarOpen: (open: boolean) => void
   setSettingsOpen: (open: boolean) => void
 
-  setGithubToken: (token: string) => void
-  setGithubGistId: (id: string) => void
-  syncToGithub: () => Promise<void>
-  pullFromGithub: () => Promise<void>
+  createScenario: () => void
+  duplicateScenario: () => void
+  renameScenario: (id: string, name: string) => void
+  deleteScenario: (id: string) => void
+  switchScenario: (id: string) => void
+
+  setCloudEmail: (email: string) => void
+  loadCloudSession: () => Promise<void>
+  sendCloudMagicLink: () => Promise<void>
+  signOutOfCloud: () => Promise<void>
+  backupToCloud: () => Promise<void>
+  restoreFromCloud: (mode: CloudRestoreMode) => Promise<void>
 
   loadFromStorage: () => boolean
-  saveToStorage: () => void
-}
-
-function saveGithubSettings(state: { githubToken: string; githubGistId: string }) {
-  localStorage.setItem(GIST_SETTINGS_KEY, JSON.stringify({
-    githubToken: state.githubToken,
-    githubGistId: state.githubGistId,
-  }))
-}
-
-function loadGithubSettings() {
-  try {
-    const raw = localStorage.getItem(GIST_SETTINGS_KEY)
-    if (!raw) return {}
-    return JSON.parse(raw)
-  } catch {
-    return {}
-  }
+  saveToStorage: (options?: { touchActive?: boolean }) => void
 }
 
 function defaultTimelineEnd(): string {
@@ -159,6 +165,121 @@ function defaultTimelineEnd(): string {
 function defaultTimelineStart(): string {
   const d = new Date()
   return formatDate(new Date(d.getFullYear() - 1, d.getMonth(), 1))
+}
+
+function normalizePortfolioData(data: Partial<PortfolioData>): PortfolioData {
+  const phaseTypes = data.phaseTypes ? normalizePhaseTypes(data.phaseTypes) : DEFAULT_PHASE_TYPES
+  return {
+    museumName: data.museumName ?? '',
+    galleries: data.galleries ?? DEFAULT_GALLERIES,
+    phaseTypes,
+    exhibitions: (data.exhibitions ?? []).map(project => ({
+      ...project,
+      phases: project.phases.map(phase => {
+        const phaseType = phaseTypes.find(pt => pt.id === phase.typeId)
+        return phaseType ? { ...phase, label: phaseType.label } : phase
+      }),
+    })),
+    timelineStartDate: data.timelineStartDate ?? defaultTimelineStart(),
+    timelineEndDate: data.timelineEndDate ?? defaultTimelineEnd(),
+    monthWidth: data.monthWidth ?? 40,
+    collapsedLanes: data.collapsedLanes ?? [],
+    showMilestones: data.showMilestones ?? true,
+    sidebarOpen: data.sidebarOpen ?? true,
+  }
+}
+
+function createPortfolioData(state: StoreState): PortfolioData {
+  const {
+    museumName, galleries, phaseTypes, exhibitions,
+    timelineStartDate, timelineEndDate, monthWidth,
+    collapsedLanes, showMilestones, sidebarOpen,
+  } = state
+  return {
+    museumName, galleries, phaseTypes, exhibitions,
+    timelineStartDate, timelineEndDate, monthWidth,
+    collapsedLanes, showMilestones, sidebarOpen,
+  }
+}
+
+function createScenario(name: string, data: PortfolioData): ScenarioSave {
+  return {
+    id: generateId(),
+    name,
+    updatedAt: new Date().toISOString(),
+    data: structuredClone(data),
+  }
+}
+
+function createScenarioLibrary(data: PortfolioData): ScenarioLibrary {
+  const scenario = createScenario(DEFAULT_SCENARIO_NAME, data)
+  return {
+    version: 3,
+    activeScenarioId: scenario.id,
+    scenarios: [scenario],
+  }
+}
+
+function isScenarioLibrary(data: unknown): data is ScenarioLibrary {
+  if (!data || typeof data !== 'object') return false
+  const candidate = data as Partial<ScenarioLibrary>
+  return Array.isArray(candidate.scenarios) && typeof candidate.activeScenarioId === 'string'
+}
+
+function normalizeScenarioLibrary(data: unknown): ScenarioLibrary {
+  if (isScenarioLibrary(data) && data.scenarios.length > 0) {
+    const scenarios = data.scenarios.map((scenario, index) => ({
+      id: scenario.id || generateId(),
+      name: scenario.name?.trim() || `Scenario ${index + 1}`,
+      updatedAt: scenario.updatedAt || new Date().toISOString(),
+      data: normalizePortfolioData(scenario.data ?? {}),
+    }))
+    const activeScenarioId = scenarios.some(s => s.id === data.activeScenarioId)
+      ? data.activeScenarioId
+      : scenarios[0].id
+    return { version: 3, activeScenarioId, scenarios }
+  }
+
+  return createScenarioLibrary(normalizePortfolioData(data as Partial<PortfolioData>))
+}
+
+function mergeScenarioLibraries(local: ScenarioLibrary, cloud: ScenarioLibrary): ScenarioLibrary {
+  const scenarios = new Map<string, ScenarioSave>()
+
+  local.scenarios.forEach(scenario => scenarios.set(scenario.id, scenario))
+  cloud.scenarios.forEach(scenario => {
+    const existing = scenarios.get(scenario.id)
+    if (!existing || new Date(scenario.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+      scenarios.set(scenario.id, scenario)
+    }
+  })
+
+  const mergedScenarios = Array.from(scenarios.values())
+  const activeScenarioId = mergedScenarios.some(s => s.id === local.activeScenarioId)
+    ? local.activeScenarioId
+    : mergedScenarios.some(s => s.id === cloud.activeScenarioId)
+      ? cloud.activeScenarioId
+      : mergedScenarios[0].id
+
+  return { version: 3, activeScenarioId, scenarios: mergedScenarios }
+}
+
+function applyPortfolioData(data: PortfolioData) {
+  return {
+    museumName: data.museumName,
+    galleries: data.galleries,
+    phaseTypes: data.phaseTypes,
+    exhibitions: data.exhibitions,
+    timelineStartDate: data.timelineStartDate,
+    timelineEndDate: data.timelineEndDate,
+    monthWidth: data.monthWidth,
+    collapsedLanes: data.collapsedLanes,
+    showMilestones: data.showMilestones,
+    sidebarOpen: data.sidebarOpen,
+    selectedProjectId: null,
+    editingCheckpoint: null,
+    ...createInitialHistoryState(),
+  }
 }
 
 export const useStore = create<StoreState>()((set, get) => ({
@@ -175,10 +296,13 @@ export const useStore = create<StoreState>()((set, get) => ({
   showMilestones: true,
   sidebarOpen: true,
   settingsOpen: false,
-  githubToken: '',
-  githubGistId: '',
-  syncStatus: 'idle',
-  syncError: null,
+  activeScenarioId: '',
+  scenarios: [],
+  cloudEmail: '',
+  cloudUserEmail: null,
+  cloudUpdatedAt: null,
+  cloudStatus: 'idle',
+  cloudError: null,
 
   ...createInitialHistoryState(),
 
@@ -521,50 +645,184 @@ export const useStore = create<StoreState>()((set, get) => ({
   setMonthWidth: (width) => set({ monthWidth: Math.max(30, Math.min(120, width)) }),
 
   seedData: (data) => {
-    set({
+    const portfolioData = normalizePortfolioData({
       galleries: data.galleries,
       phaseTypes: data.phaseTypes,
       exhibitions: data.exhibitions,
+      timelineStartDate: get().timelineStartDate,
+      timelineEndDate: get().timelineEndDate,
+      monthWidth: get().monthWidth,
+      showMilestones: get().showMilestones,
+      sidebarOpen: get().sidebarOpen,
+      collapsedLanes: [],
+      museumName: get().museumName,
+    })
+    const library = createScenarioLibrary(portfolioData)
+    set({
+      galleries: portfolioData.galleries,
+      phaseTypes: portfolioData.phaseTypes,
+      exhibitions: portfolioData.exhibitions,
       collapsedLanes: [],
       selectedProjectId: null,
+      activeScenarioId: library.activeScenarioId,
+      scenarios: library.scenarios,
     })
-    get().saveToStorage()
+    get().saveToStorage({ touchActive: false })
   },
 
   setShowMilestones: (show) => set({ showMilestones: show }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSettingsOpen: (open) => set({ settingsOpen: open }),
 
-  setGithubToken: (token) => { set({ githubToken: token }); saveGithubSettings(get()) },
-  setGithubGistId: (id) => { set({ githubGistId: id }); saveGithubSettings(get()) },
-
-  syncToGithub: async () => {
-    const { githubToken, githubGistId, saveToStorage } = get()
-    set({ syncStatus: 'syncing', syncError: null })
-    saveToStorage()
+  createScenario: () => {
+    get().saveToStorage()
     const raw = localStorage.getItem(STORAGE_KEY)
-    const data = raw ? JSON.parse(raw) : {}
-    const result = await pushToGist(data, githubToken, githubGistId || undefined)
+    const currentLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+    const baseData = normalizePortfolioData({})
+    const scenario = createScenario(`Scenario ${currentLibrary.scenarios.length + 1}`, baseData)
+    const scenarios = [...currentLibrary.scenarios, scenario]
+    const library = { version: 3 as const, activeScenarioId: scenario.id, scenarios }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+    set({
+      ...applyPortfolioData(scenario.data),
+      activeScenarioId: scenario.id,
+      scenarios,
+    })
+  },
+
+  duplicateScenario: () => {
+    get().saveToStorage()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const currentLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+    const current = currentLibrary.scenarios.find(s => s.id === currentLibrary.activeScenarioId)
+    const data = createPortfolioData(get())
+    const scenario = createScenario(`${current?.name ?? DEFAULT_SCENARIO_NAME} Copy`, data)
+    const scenarios = [...currentLibrary.scenarios, scenario]
+    const library = { version: 3 as const, activeScenarioId: scenario.id, scenarios }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+    set({
+      ...applyPortfolioData(scenario.data),
+      activeScenarioId: scenario.id,
+      scenarios,
+    })
+  },
+
+  renameScenario: (id, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    get().saveToStorage()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const currentLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+    const scenarios = currentLibrary.scenarios.map(s => s.id === id ? { ...s, name: trimmed } : s)
+    const library = { version: 3 as const, activeScenarioId: currentLibrary.activeScenarioId, scenarios }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+    set({ scenarios })
+  },
+
+  deleteScenario: (id) => {
+    get().saveToStorage()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const currentLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+    const { scenarios, activeScenarioId } = currentLibrary
+    if (scenarios.length <= 1) return
+    const nextScenarios = scenarios.filter(s => s.id !== id)
+    const nextActiveId = activeScenarioId === id ? nextScenarios[0].id : activeScenarioId
+    const nextActive = nextScenarios.find(s => s.id === nextActiveId) ?? nextScenarios[0]
+    const library = { version: 3 as const, activeScenarioId: nextActive.id, scenarios: nextScenarios }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+    set({
+      ...applyPortfolioData(nextActive.data),
+      activeScenarioId: nextActive.id,
+      scenarios: nextScenarios,
+    })
+  },
+
+  switchScenario: (id) => {
+    if (id === get().activeScenarioId) return
+    get().saveToStorage()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const library = normalizeScenarioLibrary(raw ? JSON.parse(raw) : { scenarios: get().scenarios, activeScenarioId: get().activeScenarioId })
+    const scenario = library.scenarios.find(s => s.id === id)
+    if (!scenario) return
+    const nextLibrary = { ...library, activeScenarioId: id }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLibrary))
+    set({
+      ...applyPortfolioData(scenario.data),
+      activeScenarioId: id,
+      scenarios: nextLibrary.scenarios,
+    })
+  },
+
+  setCloudEmail: (email) => set({ cloudEmail: email }),
+
+  loadCloudSession: async () => {
+    set({ cloudStatus: 'loading', cloudError: null })
+    const result = await getCloudSession()
     if (result.success) {
-      if (result.gistId && result.gistId !== githubGistId) {
-        set({ githubGistId: result.gistId })
-        saveGithubSettings({ githubToken, githubGistId: result.gistId })
-      }
-      set({ syncStatus: 'success' })
+      set({
+        cloudUserEmail: result.user?.email ?? null,
+        cloudEmail: result.user?.email ?? get().cloudEmail,
+        cloudStatus: 'idle',
+      })
     } else {
-      set({ syncStatus: 'error', syncError: result.error ?? null })
+      set({ cloudStatus: 'error', cloudError: result.error ?? null })
     }
   },
 
-  pullFromGithub: async () => {
-    const { githubToken, githubGistId } = get()
-    set({ syncStatus: 'pulling', syncError: null })
-    const result = await pullFromGist(githubToken, githubGistId)
+  sendCloudMagicLink: async () => {
+    const email = get().cloudEmail.trim()
+    if (!email) {
+      set({ cloudStatus: 'error', cloudError: 'Email is required' })
+      return
+    }
+    set({ cloudStatus: 'sending-link', cloudError: null })
+    const result = await sendMagicLink(email)
+    set(result.success
+      ? { cloudStatus: 'success' }
+      : { cloudStatus: 'error', cloudError: result.error ?? null })
+  },
+
+  signOutOfCloud: async () => {
+    set({ cloudStatus: 'loading', cloudError: null })
+    const result = await signOutCloud()
+    set(result.success
+      ? { cloudStatus: 'idle', cloudUserEmail: null }
+      : { cloudStatus: 'error', cloudError: result.error ?? null })
+  },
+
+  backupToCloud: async () => {
+    const { saveToStorage } = get()
+    set({ cloudStatus: 'backing-up', cloudError: null })
+    saveToStorage()
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const library = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+    const result = await backupScenarioLibrary(library)
+    set(result.success
+      ? { cloudStatus: 'success', cloudUpdatedAt: result.updatedAt ?? null }
+      : { cloudStatus: 'error', cloudError: result.error ?? null })
+  },
+
+  restoreFromCloud: async (mode) => {
+    set({ cloudStatus: 'restoring', cloudError: null })
+    get().saveToStorage({ touchActive: false })
+    const result = await restoreScenarioLibrary()
     if (result.success && result.data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.data))
-      set({ ...result.data, syncStatus: 'success', settingsOpen: false })
+      const cloudLibrary = normalizeScenarioLibrary(result.data)
+      const raw = localStorage.getItem(STORAGE_KEY)
+      const localLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
+      const library = mode === 'merge' ? mergeScenarioLibraries(localLibrary, cloudLibrary) : cloudLibrary
+      const scenario = library.scenarios.find(s => s.id === library.activeScenarioId) ?? library.scenarios[0]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+      set({
+        ...applyPortfolioData(scenario.data),
+        activeScenarioId: scenario.id,
+        scenarios: library.scenarios,
+        cloudUpdatedAt: result.updatedAt ?? null,
+        cloudStatus: 'success',
+        settingsOpen: false,
+      })
     } else {
-      set({ syncStatus: 'error', syncError: result.error ?? null })
+      set({ cloudStatus: 'error', cloudError: result.error ?? null })
     }
   },
 
@@ -572,49 +830,38 @@ export const useStore = create<StoreState>()((set, get) => ({
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return false
-      const data = JSON.parse(raw)
-      if (data.museumName) set({ museumName: data.museumName })
-      if (data.galleries) set({ galleries: data.galleries })
-      const phaseTypes = data.phaseTypes ? normalizePhaseTypes(data.phaseTypes) : undefined
-      if (phaseTypes) set({ phaseTypes })
-      if (data.exhibitions) {
-        set({
-          exhibitions: data.exhibitions.map((project: ExhibitionProject) => ({
-            ...project,
-            phases: project.phases.map(phase => {
-              const phaseType = phaseTypes?.find(pt => pt.id === phase.typeId)
-              return phaseType ? { ...phase, label: phaseType.label } : phase
-            }),
-          })),
-        })
-      }
-      if (data.timelineStartDate) set({ timelineStartDate: data.timelineStartDate })
-      if (data.timelineEndDate) set({ timelineEndDate: data.timelineEndDate })
-      if (data.monthWidth) set({ monthWidth: data.monthWidth })
-      if (data.collapsedLanes) set({ collapsedLanes: data.collapsedLanes })
-      if (data.museumName) set({ museumName: data.museumName })
-      if (data.showMilestones !== undefined) set({ showMilestones: data.showMilestones })
-      if (data.sidebarOpen !== undefined) set({ sidebarOpen: data.sidebarOpen })
-      const gh = loadGithubSettings()
-      if (gh.githubToken) set({ githubToken: gh.githubToken })
-      if (gh.githubGistId) set({ githubGistId: gh.githubGistId })
+      const library = normalizeScenarioLibrary(JSON.parse(raw))
+      const scenario = library.scenarios.find(s => s.id === library.activeScenarioId) ?? library.scenarios[0]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(library))
+      set({
+        ...applyPortfolioData(scenario.data),
+        activeScenarioId: scenario.id,
+        scenarios: library.scenarios,
+      })
       return true
     } catch {
       return false
     }
   },
 
-  saveToStorage: () => {
-    const {
-      museumName, galleries, phaseTypes, exhibitions,
-      timelineStartDate, timelineEndDate, monthWidth,
-      collapsedLanes, showMilestones, sidebarOpen,
-    } = get()
-    const data = {
-      museumName, galleries, phaseTypes, exhibitions,
-      timelineStartDate, timelineEndDate, monthWidth,
-      collapsedLanes, showMilestones, sidebarOpen,
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  saveToStorage: (options) => {
+    const state = get()
+    const activeScenarioId = state.activeScenarioId || generateId()
+    const touchActive = options?.touchActive ?? true
+    const now = new Date().toISOString()
+    const currentData = createPortfolioData(state)
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const storedLibrary = raw ? normalizeScenarioLibrary(JSON.parse(raw)) : createScenarioLibrary(currentData)
+    const knownScenarios = state.scenarios.length > 0 ? state.scenarios : storedLibrary.scenarios
+    const scenarios = knownScenarios.some(s => s.id === activeScenarioId)
+      ? knownScenarios.map(s => s.id === activeScenarioId
+        ? { ...s, updatedAt: touchActive ? now : s.updatedAt, data: currentData }
+        : s)
+      : [{ id: activeScenarioId, name: DEFAULT_SCENARIO_NAME, updatedAt: now, data: currentData }, ...knownScenarios]
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 3,
+      activeScenarioId,
+      scenarios,
+    }))
   },
 }))

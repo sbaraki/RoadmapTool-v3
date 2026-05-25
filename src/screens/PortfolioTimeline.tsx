@@ -14,6 +14,7 @@ export default function PortfolioTimeline() {
   useKeyboard()
 
   const loadFromStorage = useStore(s => s.loadFromStorage)
+  const loadCloudSession = useStore(s => s.loadCloudSession)
   const seedData = useStore(s => s.seedData)
 
   const loadedRef = useRef(false)
@@ -24,9 +25,10 @@ export default function PortfolioTimeline() {
       if (!loaded) {
         seedData(generateSeedData())
       }
+      loadCloudSession()
       loadedRef.current = true
     }
-  }, [loadFromStorage, seedData])
+  }, [loadCloudSession, loadFromStorage, seedData])
 
   return (
     <>

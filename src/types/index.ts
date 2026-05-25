@@ -46,6 +46,32 @@ export interface ExhibitionProject {
   description?: string
 }
 
+export interface PortfolioData {
+  museumName: string
+  galleries: Gallery[]
+  phaseTypes: PhaseType[]
+  exhibitions: ExhibitionProject[]
+  timelineStartDate: string
+  timelineEndDate: string
+  monthWidth: number
+  collapsedLanes: string[]
+  showMilestones: boolean
+  sidebarOpen: boolean
+}
+
+export interface ScenarioSave {
+  id: string
+  name: string
+  updatedAt: string
+  data: PortfolioData
+}
+
+export interface ScenarioLibrary {
+  version: 3
+  activeScenarioId: string
+  scenarios: ScenarioSave[]
+}
+
 export interface PrintSettings {
   paperSize: 'letter' | 'ledger'
   orientation: 'landscape' | 'portrait'

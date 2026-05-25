@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Plus, Undo2, Redo2, Download, Printer, Settings, LoaderCircle,
   Eye, EyeOff, ChevronsUpDown, ChevronsDownUp, Crosshair, PanelLeftClose, PanelLeftOpen,
+  Copy, FilePlus2, Pencil, Trash2,
 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
 import { IconButton } from '../ui/IconButton'
@@ -21,7 +22,11 @@ export function Header() {
     galleries,
     timelineStartDate, timelineEndDate,
     setTimelineRange, setMonthWidth, monthWidth,
+    activeScenarioId, scenarios,
+    switchScenario, createScenario, duplicateScenario, renameScenario, deleteScenario,
   } = useStore()
+
+  const activeScenario = scenarios.find(s => s.id === activeScenarioId)
 
   function handleNewProject() {
     addProject()
@@ -31,12 +36,49 @@ export function Header() {
     window.dispatchEvent(new CustomEvent('timeline-scroll-today'))
   }
 
+  function handleRenameScenario() {
+    if (!activeScenario) return
+    const name = window.prompt('Rename scenario', activeScenario.name)
+    if (name !== null) renameScenario(activeScenario.id, name)
+  }
+
+  function handleDeleteScenario() {
+    if (!activeScenario || scenarios.length <= 1) return
+    if (window.confirm(`Delete scenario "${activeScenario.name}"? This cannot be undone.`)) {
+      deleteScenario(activeScenario.id)
+    }
+  }
+
   return (
     <header className="bg-white border-b border-outline-variant no-print">
       <div className="flex items-center justify-between gap-4 px-container py-2">
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-headline-sm text-slate-text truncate">{museumName || 'PORTFOLIO ROADMAP'}</h1>
-          <span className="text-body-sm text-slate-muted">Portfolio Timeline</span>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="text-body-sm text-slate-muted shrink-0">Scenario</span>
+            <select
+              value={activeScenarioId}
+              onChange={event => switchScenario(event.target.value)}
+              className="h-7 min-w-0 max-w-[220px] rounded border border-outline-variant bg-white px-2 text-xs font-medium text-slate-text outline-none hover:border-outline focus:border-secondary"
+              aria-label="Active scenario"
+            >
+              {scenarios.map(scenario => (
+                <option key={scenario.id} value={scenario.id}>{scenario.name}</option>
+              ))}
+            </select>
+            <IconButton label="New Scenario" onClick={createScenario} className="p-1">
+              <FilePlus2 size={14} />
+            </IconButton>
+            <IconButton label="Duplicate Scenario" onClick={duplicateScenario} disabled={!activeScenario} className="p-1">
+              <Copy size={14} />
+            </IconButton>
+            <IconButton label="Rename Scenario" onClick={handleRenameScenario} disabled={!activeScenario} className="p-1">
+              <Pencil size={14} />
+            </IconButton>
+            <IconButton label="Delete Scenario" onClick={handleDeleteScenario} disabled={!activeScenario || scenarios.length <= 1} className="p-1">
+              <Trash2 size={14} />
+            </IconButton>
+          </div>
         </div>
 
         <div className="flex min-w-0 items-center gap-1 overflow-x-auto py-1">
