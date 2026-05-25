@@ -380,7 +380,176 @@ body {
   pointer-events: none;
 }
 
-/* ── Today ── */
+/* ── Lane row ── */
+.lane-row {
+  position: relative;
+  height: 68px;
+  overflow: hidden;
+  transition: background 120ms;
+}
+.lane-row:hover {
+  background: rgba(0,0,0,0.02);
+}
+.lane-row:nth-child(even) {
+  background: rgba(0,0,0,0.01);
+}
+.lane-row:nth-child(even):hover {
+  background: rgba(0,0,0,0.03);
+}
+
+/* Each project + its milestones forms a visual block */
+.project-block {
+  border-bottom: 1px solid var(--color-outline-variant);
+  overflow: hidden;
+}
+
+/* ── Milestone markers ── */
+.milestone-marker {
+  position: absolute;
+  z-index: 15;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.milestone-marker-dragging {
+  z-index: 80;
+  filter: drop-shadow(0 8px 14px rgba(15,23,42,0.22));
+}
+
+/* Colored square at the exact date position */
+.milestone-square {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  cursor: grab;
+  z-index: 3;
+}
+.milestone-square:active {
+  cursor: grabbing;
+}
+
+/* Label sits to the right of the square */
+.milestone-label {
+  position: absolute;
+  left: 14px;
+  top: 2px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.25;
+  max-width: 200px;
+}
+
+.milestone-label-title {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.milestone-meta {
+  display: block;
+  font-size: 10px;
+  color: rgba(100,116,139,0.9);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.milestone-date-preview {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  transform: translateX(-50%);
+  z-index: 90;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.delivery-pin {
+  position: absolute;
+  left: 0;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 999px;
+  padding: 1px 6px;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  z-index: 18;
+}
+
+.delivery-pin-date {
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
+.delivery-pin-close {
+  left: 100%;
+}
+
+/* ── Timeline Header ── */
+.timeline-year-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: -0.01em;
+  padding: 6px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #f8fafc;
+}
+.timeline-fiscal-year-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #f1f5f9;
+}
+.timeline-quarter-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #fbfdff;
+}
+.timeline-month-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2px 0;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #ffffff;
+}
+
 /* ── Lane header accent bar ── */
 .lane-accent {
   width: 3px;
