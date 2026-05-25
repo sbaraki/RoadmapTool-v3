@@ -29,6 +29,10 @@ export function Timeline() {
     () => Math.max(monthWidth, dateToPixel(timelineStartDate, timelineEndDate, monthWidth)),
     [timelineStartDate, timelineEndDate, monthWidth]
   )
+  const todayPixel = useMemo(() => {
+    const now = new Date()
+    return dateToPixel(timelineStartDate, formatDate(now), monthWidth)
+  }, [timelineStartDate, monthWidth])
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -108,6 +112,16 @@ export function Timeline() {
           className="relative"
           style={{ width: totalWidth, minHeight: '100%' }}
         >
+          {/* Today line spanning full height including header */}
+          {todayPixel > 0 && todayPixel < totalWidth && (
+            <div className="absolute top-0 bottom-0 pointer-events-none z-30" style={{ left: todayPixel }}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] font-bold tracking-wide text-rose-500 bg-white px-1.5 py-0.5 rounded-b border border-rose-500 border-t-0 uppercase leading-tight">
+                Today
+              </div>
+              <div className="absolute top-0 bottom-0 border-l-2 border-rose-500" />
+            </div>
+          )}
+
           <TimelineHeader
             startDate={timelineStartDate}
             endDate={timelineEndDate}

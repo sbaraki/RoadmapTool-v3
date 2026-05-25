@@ -21,11 +21,6 @@ export function TimelineGrid({ startDate, endDate, monthWidth }: TimelineGridPro
     return result
   }, [startDate, totalMonths, monthWidth])
 
-  const today = useMemo(() => {
-    const now = new Date()
-    return dateToPixel(startDate, formatDate(now), monthWidth)
-  }, [startDate, monthWidth])
-
   const showWeekly = monthWidth > 60
   const weeklyLines = useMemo(() => {
     if (!showWeekly) return []
@@ -60,11 +55,6 @@ export function TimelineGrid({ startDate, endDate, monthWidth }: TimelineGridPro
             style={{ left: line.left }}
           />
         ))}
-      {today > 0 && today < totalWidth && (
-        <div className="today-line" style={{ left: today }}>
-          <div className="today-label">Today</div>
-        </div>
-      )}
     </div>
   )
 }
