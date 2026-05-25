@@ -1,0 +1,592 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: 'Inter', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  --color-surface: #f7f9fb;
+  --color-surface-dim: #d8dadc;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #45464d;
+  --color-inverse-surface: #2d3133;
+  --color-inverse-on-surface: #eff1f3;
+  --color-outline: #76777d;
+  --color-outline-variant: #c6c6cd;
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #131b2e;
+  --color-on-primary-container: #7c839b;
+  --color-inverse-primary: #bec6e0;
+  --color-secondary: #4648d4;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #6063ee;
+  --color-on-secondary-container: #fffbff;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-slate-text: #0f172a;
+  --color-slate-muted: #64748b;
+  --color-heritage-purple: #6b5f76;
+  --color-status-emerald: #10b981;
+  --color-status-amber: #f59e0b;
+  --color-status-rose: #f43f5e;
+  --color-status-indigo: #6366f1;
+
+  --text-display-lg: 36px;
+  --text-display-lg--line-height: 44px;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-sm: 18px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 18px;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--font-weight: 600;
+  --text-label-md--letter-spacing: 0.05em;
+  --text-mono-data: 13px;
+  --text-mono-data--line-height: 18px;
+  --text-mono-data--font-weight: 450;
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --spacing-container: 24px;
+  --spacing-gutter: 16px;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-outline-variant);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-sans);
+  background: #f8fafc;
+  color: var(--color-slate-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Timeline Bar ── */
+.timeline-bar-main {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.12);
+  transition: box-shadow 150ms, filter 150ms;
+  overflow: hidden;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+.timeline-bar-main:hover {
+  box-shadow: 0 4px 10px rgba(15,23,42,0.16);
+  filter: brightness(1.05);
+}
+.timeline-bar-main:active {
+  cursor: grabbing;
+}
+.timeline-bar-main.dragging {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.10);
+  filter: brightness(1.08);
+  z-index: 100;
+}
+
+.timeline-bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.30);
+  letter-spacing: 0.01em;
+}
+
+.timeline-bar-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.timeline-run-wrap {
+  position: absolute;
+  top: 30px;
+  height: 32px;
+}
+
+.timeline-run-wrap-active {
+  filter: drop-shadow(0 8px 16px rgba(15, 23, 42, 0.18));
+}
+
+/* ── Phase Segments ── */
+.phase-segment {
+  height: 100%;
+  position: relative;
+  flex-shrink: 0;
+  transition: filter 150ms;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.55);
+}
+.phase-segment:first-child {
+  border-radius: 3px 0 0 3px;
+}
+.phase-segment:last-child {
+  border-radius: 0 3px 3px 0;
+}
+.phase-segment:only-child {
+  border-radius: 3px;
+}
+
+.phase-segment + .phase-segment::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: rgba(255,255,255,0.25);
+}
+
+.phase-segment-pre {
+  opacity: 0.62;
+}
+.phase-segment-post {
+  opacity: 0.7;
+}
+
+.phase-track {
+  position: absolute;
+  top: 8px;
+  height: 18px;
+  border-radius: 4px;
+  overflow: visible;
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,0.06);
+}
+
+.phase-segment-label {
+  position: absolute;
+  left: 5px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.phase-resize-handle {
+  position: absolute;
+  top: -1px;
+  right: 0;
+  bottom: -1px;
+  width: 8px;
+  z-index: 12;
+  cursor: ew-resize;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  opacity: 0;
+}
+
+.phase-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.42);
+}
+
+.phase-segment:hover .phase-resize-handle,
+.phase-resize-handle:active {
+  opacity: 1;
+}
+
+.phase-duration-preview {
+  position: absolute;
+  left: 100%;
+  top: -22px;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.18);
+}
+
+.phase-segment:has(.phase-duration-preview) {
+  overflow: visible;
+}
+
+/* ── Resize Handles ── */
+.timeline-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  z-index: 20;
+  cursor: ew-resize;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.timeline-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 50%;
+  border-radius: 1px;
+  background: rgba(255,255,255,0.5);
+  transition: height 120ms, background 120ms;
+}
+.timeline-run-wrap:hover .timeline-resize-handle,
+.timeline-run-wrap-active .timeline-resize-handle {
+  opacity: 1;
+}
+.timeline-resize-handle:hover::after {
+  height: 70%;
+  background: rgba(255,255,255,0.8);
+}
+.timeline-resize-handle-left {
+  left: -5px;
+}
+.timeline-resize-handle-right {
+  right: -5px;
+}
+
+.schedule-preview {
+  position: absolute;
+  left: 50%;
+  top: -19px;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.18);
+  pointer-events: none;
+}
+
+/* ── Single-date (diamond) marker ── */
+.milestone-project-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 5;
+}
+.milestone-project-diamond {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border-radius: 1.5px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  transition: box-shadow 150ms;
+}
+.milestone-project-diamond:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.24);
+}
+.milestone-project-diamond.selected {
+  box-shadow: 0 0 0 2px var(--color-secondary), 0 2px 8px rgba(0,0,0,0.20);
+}
+
+.milestone-project-label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-slate-text);
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* ── Timeline Grid ── */
+.timeline-month-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--color-outline-variant);
+  opacity: 0.22;
+  pointer-events: none;
+}
+.timeline-year-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--color-outline-variant);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.timeline-week-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--color-outline-variant);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* ── Today ── */
+.today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #f43f5e;
+  z-index: 25;
+  pointer-events: none;
+}
+.today-label {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #f43f5e;
+  background: #fff;
+  padding: 1px 6px;
+  border-radius: 0 0 3px 3px;
+  text-transform: uppercase;
+  border: 1px solid #f43f5e;
+  border-top: none;
+}
+
+/* ── Lane row ── */
+.lane-row {
+  position: relative;
+  height: 68px;
+  transition: background 120ms;
+}
+.lane-row:hover {
+  background: rgba(0,0,0,0.02);
+}
+.lane-row:nth-child(even) {
+  background: rgba(0,0,0,0.01);
+}
+.lane-row:nth-child(even):hover {
+  background: rgba(0,0,0,0.03);
+}
+
+/* Each project + its milestones forms a visual block */
+.project-block {
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+/* ── Milestone markers ── */
+.milestone-marker {
+  position: absolute;
+  z-index: 15;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.milestone-marker-dragging {
+  z-index: 80;
+  filter: drop-shadow(0 8px 14px rgba(15,23,42,0.22));
+}
+
+/* Colored square at the exact date position */
+.milestone-square {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  cursor: grab;
+  z-index: 3;
+}
+.milestone-square:active {
+  cursor: grabbing;
+}
+
+/* Label sits to the right of the square */
+.milestone-label {
+  position: absolute;
+  left: 14px;
+  top: 2px;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+  line-height: 1.25;
+  max-width: 200px;
+}
+
+.milestone-label-title {
+  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.milestone-meta {
+  display: block;
+  font-size: 10px;
+  color: rgba(100,116,139,0.9);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.milestone-date-preview {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  transform: translateX(-50%);
+  z-index: 90;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.delivery-pin {
+  position: absolute;
+  left: 0;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 999px;
+  padding: 1px 6px;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  z-index: 18;
+}
+
+.delivery-pin-date {
+  color: #7f1d1d;
+  font-weight: 600;
+}
+
+.delivery-pin-close {
+  left: 100%;
+}
+
+/* ── Timeline Header ── */
+.timeline-year-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: -0.01em;
+  padding: 6px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #f8fafc;
+}
+.timeline-fiscal-year-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #f1f5f9;
+}
+.timeline-quarter-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #fbfdff;
+}
+.timeline-month-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2px 0;
+  border-right: 1px solid var(--color-outline-variant);
+  opacity: 1;
+  background: #ffffff;
+}
+
+/* ── Lane header accent bar ── */
+.lane-accent {
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+}
+
+/* ── Print ── */
+@media print {
+  @page { margin: 0.5in; }
+  body { background: white !important; }
+  .no-print { display: none !important; }
+}
