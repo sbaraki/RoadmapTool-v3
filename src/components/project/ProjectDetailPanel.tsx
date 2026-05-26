@@ -147,6 +147,18 @@ export function ProjectDetailPanel() {
           )}
         </div>
 
+        {scheduleMode === 'range' && (
+          <label className="flex items-center gap-2 rounded border border-outline-variant bg-surface-container-low px-3 py-2 text-body-sm text-slate-text cursor-pointer">
+            <input
+              type="checkbox"
+              checked={project.showDatePills ?? true}
+              onChange={e => updateProject(project.id, { showDatePills: e.target.checked })}
+              className="h-4 w-4 accent-secondary"
+            />
+            <span>Show OPEN/CLOSE date pills on timeline</span>
+          </label>
+        )}
+
         <Input
           label="Description / Notes"
           value={description}

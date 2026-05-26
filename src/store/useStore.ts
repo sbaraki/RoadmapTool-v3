@@ -175,6 +175,7 @@ function normalizePortfolioData(data: Partial<PortfolioData>): PortfolioData {
     phaseTypes,
     exhibitions: (data.exhibitions ?? []).map(project => ({
       ...project,
+      showDatePills: project.showDatePills ?? true,
       phases: project.phases.map(phase => {
         const phaseType = phaseTypes.find(pt => pt.id === phase.typeId)
         return phaseType ? { ...phase, label: phaseType.label } : phase
@@ -431,6 +432,7 @@ export const useStore = create<StoreState>()((set, get) => ({
       scheduleMode: 'range',
       checkpoints: [],
       phases: createDefaultPhases(phaseTypes),
+      showDatePills: true,
       laneOrder: exhibitions.filter(e => e.gallery === targetGallery?.name).length,
       ...partial,
     }

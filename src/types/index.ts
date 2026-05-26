@@ -44,6 +44,7 @@ export interface ExhibitionProject {
   phases: ProjectPhase[]
   laneOrder?: number
   description?: string
+  showDatePills?: boolean
 }
 
 export interface PortfolioData {
