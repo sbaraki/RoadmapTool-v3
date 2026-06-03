@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { parseISO } from 'date-fns'
 import type { Gallery, ExhibitionProject, ProjectCheckpoint } from '../../types'
 import { ProjectBar } from './ProjectBar'
 import { MilestoneMarker } from './MilestoneMarker'
-import { getGalleryColor } from '../../utils/color'
+import { STATUS_COLORS, getGalleryColor } from '../../utils/color'
 import { useStore } from '../../store/useStore'
 import { addMonthsToString, dateToPixel, pixelToDate } from '../../utils/date'
 
@@ -115,6 +115,7 @@ export function GalleryLane({
     const left = dateToPixel(timelineStart, project.startDate, monthWidth)
     const w = dateToPixel(project.startDate, project.endDate, monthWidth)
     const showLabel = w >= 100
+    const statusColor = STATUS_COLORS[project.status] ?? '#94a3b8'
     const milestones = (project.checkpoints ?? []).filter(
       cp => cp.date >= timelineStart && cp.date <= timelineEnd
     )
@@ -122,8 +123,14 @@ export function GalleryLane({
     return (
       <div
         key={project.id}
-        className="absolute top-0.5 h-[38px] rounded-sm cursor-pointer transition-opacity hover:opacity-80 flex flex-col items-start justify-center overflow-hidden px-1.5"
-        style={{ left, width: Math.max(w, 4), backgroundColor: `${galleryColor}30`, borderLeft: `3px solid ${galleryColor}` }}
+        className="collapsed-project-preview absolute rounded-sm cursor-pointer transition-opacity hover:opacity-80 flex flex-col items-start justify-center overflow-hidden px-1.5"
+        style={{
+          left,
+          width: Math.max(w, 4),
+          backgroundColor: `${statusColor}24`,
+          borderLeft: `3px solid ${statusColor}`,
+          boxShadow: `inset 0 0 0 1px ${statusColor}30`,
+        }}
         onClick={() => setSelectedProject(project.id)}
       >
         <span className="text-mono-data text-[10px] font-semibold text-slate-text leading-tight truncate w-full">
@@ -171,23 +178,24 @@ export function GalleryLane({
           </span>
           <span className="text-mono-data text-xs text-slate-muted/60">{projects.length}</span>
         </div>
-        <div className="relative overflow-hidden" style={{ width: totalWidth, minHeight: 44 }} onDoubleClick={handleDoubleClick}>
+        <div className="collapsed-lane-body relative overflow-hidden" style={{ width: totalWidth }} onDoubleClick={handleDoubleClick}>
           {sortedProjects.map(project => {
             if (project.scheduleMode === 'single-date') {
               const left = dateToPixel(timelineStart, project.startDate, monthWidth)
+              const statusColor = STATUS_COLORS[project.status] ?? '#94a3b8'
               const milestones = (project.checkpoints ?? []).filter(
                 cp => cp.date >= timelineStart && cp.date <= timelineEnd
               )
               return (
                 <div
                   key={project.id}
-                  className="absolute top-0.5 h-[38px] flex items-center gap-1.5 cursor-pointer hover:opacity-80"
+                  className="collapsed-project-single absolute flex items-center gap-1.5 cursor-pointer hover:opacity-80"
                   style={{ left }}
                   onClick={() => setSelectedProject(project.id)}
                 >
                   <div
                     className="w-2.5 h-2.5 rotate-45 rounded-sm shrink-0"
-                    style={{ backgroundColor: galleryColor }}
+                    style={{ backgroundColor: statusColor }}
                   />
                   <span className="text-mono-data text-[10px] font-semibold text-slate-text truncate max-w-[120px]">
                     {project.title}
@@ -246,7 +254,13 @@ export function GalleryLane({
               />
             </div>
             {hasMilestones && (
-              <div className="relative" style={{ height: pm!.bandHeight }}>
+              <div
+                className="milestone-band relative"
+                style={{
+                  height: pm!.bandHeight,
+                  '--milestone-band-base': `${pm!.bandHeight}px`,
+                } as CSSProperties}
+              >
                 {pm!.lanes.map(({ checkpoint, lane }) => (
                   <MilestoneMarker
                     key={checkpoint.id}

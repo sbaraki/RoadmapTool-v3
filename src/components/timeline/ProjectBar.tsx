@@ -99,6 +99,7 @@ export function ProjectBar({
   const runLabel = `${format(projStart, 'MMM yyyy')} - ${format(projEnd, 'MMM yyyy')}`
   const openDateLabel = format(projStart, 'MMM d')
   const closeDateLabel = format(projEnd, 'MMM d')
+  const singleDateLabel = format(projStart, monthWidth >= 42 ? 'MMM d, yyyy' : 'MMM d')
   const showDatePills = project.showDatePills ?? true
   const moveX = moveDrag.transform?.x ?? 0
   const resizeStartX = resizeStartDrag.transform?.x ?? 0
@@ -242,7 +243,10 @@ export function ProjectBar({
              className={`milestone-project-diamond ${isSelected ? 'selected' : ''}`}
              style={{ backgroundColor: statusColor, borderColor: statusColor }}
            />
-           <span className="milestone-project-label">{project.title}</span>
+           <span className="milestone-project-label">
+             <span className="milestone-project-label-title">{project.title}</span>
+             <span className="milestone-project-label-date">{singleDateLabel}</span>
+           </span>
          </div>
        )}
 
