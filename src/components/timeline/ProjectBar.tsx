@@ -97,8 +97,11 @@ export function ProjectBar({
   const containerLeft = isRange ? left - preWidth : left - width / 2
   const containerWidth = isRange ? width + preWidth + postWidth : width
   const runLabel = `${format(projStart, 'MMM yyyy')} - ${format(projEnd, 'MMM yyyy')}`
-  const openDateLabel = format(projStart, 'MMM d')
-  const closeDateLabel = format(projEnd, 'MMM d')
+  const showDatePillsAsTbc = project.showDatePillsAsTbc ?? false
+  const openDateLabel = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d')
+  const closeDateLabel = showDatePillsAsTbc ? 'TBC' : format(projEnd, 'MMM d')
+  const openDateTitle = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d, yyyy')
+  const closeDateTitle = showDatePillsAsTbc ? 'TBC' : format(projEnd, 'MMM d, yyyy')
   const singleDateLabel = format(projStart, monthWidth >= 42 ? 'MMM d, yyyy' : 'MMM d')
   const showDatePills = project.showDatePills ?? true
   const moveX = moveDrag.transform?.x ?? 0
@@ -197,12 +200,12 @@ export function ProjectBar({
 
             {showDatePills && (
               <>
-                <div className="delivery-pin" title={`Exhibition Open: ${format(projStart, 'MMM d, yyyy')}`}>
+                <div className="delivery-pin" title={`Exhibition Open: ${openDateTitle}`}>
                   <span>OPEN</span>
                   <span className="delivery-pin-date">{openDateLabel}</span>
                 </div>
 
-                <div className="delivery-pin delivery-pin-close" title={`Exhibition Close: ${format(projEnd, 'MMM d, yyyy')}`}>
+                <div className="delivery-pin delivery-pin-close" title={`Exhibition Close: ${closeDateTitle}`}>
                   <span>CLOSE</span>
                   <span className="delivery-pin-date">{closeDateLabel}</span>
                 </div>

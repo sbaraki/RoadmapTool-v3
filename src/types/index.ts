@@ -45,6 +45,7 @@ export interface ExhibitionProject {
   laneOrder?: number
   description?: string
   showDatePills?: boolean
+  showDatePillsAsTbc?: boolean
 }
 
 export interface PortfolioData {
