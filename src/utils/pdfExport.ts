@@ -140,10 +140,13 @@ export async function exportTimelineToPdf(): Promise<void> {
     resetExportSizing(container)
   }
 
+  const imgData = canvas.toDataURL('image/jpeg', 0.85)
+
   const pdf = new jsPDF({
     orientation: 'landscape',
     unit: 'in',
     format: [LEDGER_WIDTH_IN, LEDGER_HEIGHT_IN],
+    compress: true,
   })
 
   const pageW = pdf.internal.pageSize.getWidth()
@@ -157,7 +160,7 @@ export async function exportTimelineToPdf(): Promise<void> {
 
   const now = new Date()
   drawMetadata(pdf, now, pageW)
-  pdf.addImage(canvas, 'PNG', x, y, imgW, imgH)
+  pdf.addImage(imgData, 'JPEG', x, y, imgW, imgH, undefined, 'FAST')
 
   const dateStr = now.toISOString().slice(0, 10)
 
