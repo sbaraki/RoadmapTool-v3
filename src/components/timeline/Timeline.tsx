@@ -11,6 +11,55 @@ import { TimelineHeader } from './TimelineHeader'
 import { TimelineGrid } from './TimelineGrid'
 import { GalleryLane } from './GalleryLane'
 import { addDaysToString, addMonthsToString, dateToPixel, formatDate, pixelDeltaToDays, snapToWeek } from '../../utils/date'
+import { parseISO } from 'date-fns'
+import { MilestoneMarker } from './MilestoneMarker'
+import type { ProjectCheckpoint } from '../../types'
+import type { CSSProperties } from 'react'
+
+type MasterAssignedLane = { projectId: string; checkpoint: ProjectCheckpoint; lane: number }
+
+function computeMasterMilestoneLanes(
+  items: { projectId: string; checkpoint: ProjectCheckpoint }[],
+  timelineStart: string,
+  monthWidth: number,
+): { lanes: MasterAssignedLane[]; maxLanes: number; bandHeight: number } {
+  if (items.length === 0) return { lanes: [], maxLanes: 0, bandHeight: 0 }
+
+  const occupied = new Map<number, [number, number][]>()
+  const lanes: MasterAssignedLane[] = []
+
+  const sorted = [...items].sort(
+    (a, b) => parseISO(a.checkpoint.date).getTime() - parseISO(b.checkpoint.date).getTime(),
+  )
+
+  for (const item of sorted) {
+    const cp = item.checkpoint
+    const cpLeft = dateToPixel(timelineStart, cp.date, monthWidth)
+    const tickOffset = 14
+    const projectDotWidth = 10
+    const titleWidth = cp.title.length * 6.2
+    const metaWidth = `${cp.date} · ${cp.kind}`.length * 5.5
+    const labelTextWidth = Math.max(titleWidth, metaWidth) + 8
+    const labelWidth = Math.min(240, Math.max(100, tickOffset + projectDotWidth + labelTextWidth))
+    const cpRight = cpLeft + labelWidth
+
+    let lane = 0
+    while (true) {
+      const ranges = occupied.get(lane) ?? []
+      const conflict = ranges.some(([l, r]) => cpLeft - 20 < r && cpRight + 20 > l)
+      if (!conflict) {
+        occupied.set(lane, [...ranges, [cpLeft, cpRight]])
+        lanes.push({ ...item, lane })
+        break
+      }
+      lane++
+    }
+  }
+
+  const maxLane = lanes.length > 0 ? Math.max(...lanes.map(a => a.lane)) + 1 : 0
+  const bandHeight = Math.max(maxLane, 1) * 30 + 10
+  return { lanes, maxLanes: maxLane, bandHeight }
+}
 
 export function Timeline() {
   const galleries = useStore(s => s.galleries)
@@ -23,11 +72,31 @@ export function Timeline() {
   const updateProject = useStore(s => s.updateProject)
   const updatePhase = useStore(s => s.updatePhase)
   const updateCheckpoint = useStore(s => s.updateCheckpoint)
+  const showMilestones = useStore(s => s.showMilestones)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const totalWidth = useMemo(
     () => Math.max(monthWidth, dateToPixel(timelineStartDate, timelineEndDate, monthWidth)),
     [timelineStartDate, timelineEndDate, monthWidth]
+  )
+
+  const allMilestones = useMemo(() => {
+    if (!showMilestones) return []
+    const list: { projectId: string; checkpoint: ProjectCheckpoint }[] = []
+    exhibitions.forEach(project => {
+      const cps = (project.checkpoints ?? []).filter(
+        cp => cp.date >= timelineStartDate && cp.date <= timelineEndDate
+      )
+      cps.forEach(cp => {
+        list.push({ projectId: project.id, checkpoint: cp })
+      })
+    })
+    return list
+  }, [exhibitions, showMilestones, timelineStartDate, timelineEndDate])
+
+  const masterMilestones = useMemo(
+    () => computeMasterMilestoneLanes(allMilestones, timelineStartDate, monthWidth),
+    [allMilestones, timelineStartDate, monthWidth]
   )
   const todayPixel = useMemo(() => {
     const now = new Date()
@@ -137,6 +206,29 @@ export function Timeline() {
 
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="relative z-10">
+                {showMilestones && allMilestones.length > 0 && (
+                  <div
+                    className="milestone-band relative border-b border-outline-variant/30 bg-slate-50/80 backdrop-blur-sm z-20"
+                    style={{
+                      height: masterMilestones.bandHeight,
+                      width: totalWidth,
+                      '--milestone-band-base': `${masterMilestones.bandHeight}px`,
+                    } as CSSProperties}
+                  >
+                    {masterMilestones.lanes.map(({ projectId, checkpoint, lane }) => (
+                      <MilestoneMarker
+                        key={checkpoint.id}
+                        projectId={projectId}
+                        checkpoint={checkpoint}
+                        originDate={timelineStartDate}
+                        monthWidth={monthWidth}
+                        laneIndex={lane}
+                        totalLanes={masterMilestones.maxLanes}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 {galleries.map(gallery => {
                   const galleryProjects = exhibitions.filter(p =>
                     p.gallery === gallery.name && p.startDate <= timelineEndDate && p.endDate >= timelineStartDate

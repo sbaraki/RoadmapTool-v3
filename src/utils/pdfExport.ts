@@ -64,7 +64,7 @@ function formatExportDate(value: string) {
 function getExportMetadata() {
   const state = useStore.getState()
   const activeScenario = state.scenarios.find(scenario => scenario.id === state.activeScenarioId)
-  const title = state.museumName?.trim() || 'Portfolio Roadmap'
+  const title = state.museumName?.trim() || 'RAM Exhibitions Roadmap'
   const scenarioName = activeScenario?.name?.trim() || 'Current Plan'
   const range = `${formatExportDate(state.timelineStartDate)} - ${formatExportDate(state.timelineEndDate)}`
   return { title, scenarioName, range }
@@ -147,7 +147,6 @@ export async function exportTimelineToPdf(): Promise<void> {
   })
 
   const pageW = pdf.internal.pageSize.getWidth()
-  const pageH = pdf.internal.pageSize.getHeight()
 
   const scale = Math.min(imageAreaW / canvas.width, imageAreaH / canvas.height)
   const imgW = canvas.width * scale
@@ -161,9 +160,7 @@ export async function exportTimelineToPdf(): Promise<void> {
   pdf.addImage(canvas, 'PNG', x, y, imgW, imgH)
 
   const dateStr = now.toISOString().slice(0, 10)
-  pdf.setFontSize(7)
-  pdf.setTextColor(148, 163, 184)
-  pdf.text('Single-page 11x17 export', pageW - PAGE_MARGIN_IN, pageH - 0.13, { align: 'right' })
+
 
   pdf.save(`RAM_ExhibitionPortfolio_${dateStr}.pdf`)
 }
