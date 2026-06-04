@@ -52,18 +52,25 @@ export function MilestoneMarker({
     >
       {/* Colored square icon at the exact date position — acts as the drag handle */}
       <div
-        className="milestone-square"
+        className="milestone-square cursor-pointer"
         style={{ backgroundColor: color }}
         title={`${checkpoint.title} · ${checkpoint.kind}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          setEditingCheckpoint({ projectId, checkpointId: checkpoint.id })
+        }}
         {...drag.attributes}
         {...drag.listeners}
       />
 
       {/* Label to the right of the square */}
       <div
-        className="milestone-label"
+        className="milestone-label cursor-pointer"
         style={{ color }}
-        onClick={() => setEditingCheckpoint({ projectId, checkpointId: checkpoint.id })}
+        onClick={(e) => {
+          e.stopPropagation()
+          setEditingCheckpoint({ projectId, checkpointId: checkpoint.id })
+        }}
       >
         <span className="milestone-label-title">{checkpoint.title}</span>
         <span className="milestone-meta">{formattedDate} · {checkpoint.kind}</span>
