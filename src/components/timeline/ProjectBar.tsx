@@ -188,8 +188,12 @@ export function ProjectBar({
               }}
               title={`${project.title}\nRun: ${runLabel}\nStatus: ${project.status}`}
             >
-              {visualRunWidth >= 72 && <span className="timeline-bar-label">{project.title}</span>}
-              {width >= 260 && <span className="timeline-bar-sub">{runLabel}</span>}
+              <span className={`timeline-bar-label ${visualRunWidth < 72 ? 'timeline-bar-label-hidden' : ''}`}>
+                {project.title}
+              </span>
+              <span className={`timeline-bar-sub ${width < 260 ? 'timeline-bar-sub-hidden' : ''}`}>
+                {runLabel}
+              </span>
             </div>
 
             {showSchedulePreview && (
