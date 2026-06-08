@@ -4,6 +4,7 @@ import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { PhaseTypeEditor } from './PhaseTypeEditor'
 import { GalleryEditor } from './GalleryEditor'
+import { KeyDateEditor } from './KeyDateEditor'
 
 export function SettingsModal() {
   const settingsOpen = useStore(s => s.settingsOpen)
@@ -49,6 +50,7 @@ export function SettingsModal() {
 
         <PhaseTypeEditor />
         <GalleryEditor />
+        <KeyDateEditor />
 
         <div className="border-t border-outline-variant pt-4">
           <h3 className="text-label-md uppercase text-slate-muted mb-2">Cloud Scenario Backup</h3>
