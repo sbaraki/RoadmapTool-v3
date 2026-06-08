@@ -6,8 +6,8 @@ import { useStore } from '../store/useStore'
 const LEDGER_WIDTH_IN = 17
 const LEDGER_HEIGHT_IN = 11
 const PAGE_MARGIN_IN = 0.25
-const METADATA_HEIGHT_IN = 0.42
-const METADATA_GAP_IN = 0.08
+const METADATA_HEIGHT_IN = 0.48
+const METADATA_GAP_IN = 0.06
 const FOOTER_HEIGHT_IN = 0.18
 const BASE_LANE_ROW_HEIGHT = 68
 const BASE_COLLAPSED_LANE_HEIGHT = 44
@@ -76,22 +76,22 @@ function drawMetadata(pdf: jsPDF, now: Date, pageW: number) {
   const right = pageW - PAGE_MARGIN_IN
   const top = PAGE_MARGIN_IN + 0.1
 
-  pdf.setDrawColor(203, 213, 225)
+  pdf.setDrawColor(148, 163, 184)
   pdf.setLineWidth(0.01)
   pdf.line(left, PAGE_MARGIN_IN + METADATA_HEIGHT_IN, right, PAGE_MARGIN_IN + METADATA_HEIGHT_IN)
 
   pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(10)
+  pdf.setFontSize(12)
   pdf.setTextColor(15, 23, 42)
   pdf.text(metadata.title, left, top)
 
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(71, 85, 105)
+  pdf.setFontSize(9)
+  pdf.setTextColor(30, 41, 59)
   pdf.text(`${metadata.scenarioName}  |  ${metadata.range}`, left, top + 0.18)
 
-  pdf.setFontSize(7)
-  pdf.setTextColor(100, 116, 139)
+  pdf.setFontSize(8.25)
+  pdf.setTextColor(51, 65, 85)
   pdf.text(
     `Exported ${format(now, 'MMM d, yyyy h:mm a')}`,
     right,
@@ -125,7 +125,7 @@ export async function exportTimelineToPdf(): Promise<void> {
 
     canvas = await toCanvas(container, {
       backgroundColor: '#ffffff',
-      pixelRatio: 2,
+      pixelRatio: 3,
       skipAutoScale: true,
       width: captureWidth,
       height: captureHeight,
@@ -140,7 +140,7 @@ export async function exportTimelineToPdf(): Promise<void> {
     resetExportSizing(container)
   }
 
-  const imgData = canvas.toDataURL('image/jpeg', 0.85)
+  const imgData = canvas.toDataURL('image/jpeg', 0.95)
 
   const pdf = new jsPDF({
     orientation: 'landscape',
