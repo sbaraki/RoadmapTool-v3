@@ -1,73 +1,106 @@
 /* ── Timeline Key Date Bands ── */
-.key-date-item {
+.key-date-event {
+  --key-date-color: #7c3aed;
+  --key-date-left: 0px;
+  --key-date-top: 0px;
+  --key-date-width: 8px;
+  --key-date-label-left: 0px;
+  --key-date-label-width: 168px;
+  --key-date-marker-center: 0px;
   position: absolute;
-  left: 0;
-  right: 0;
-  height: 38px;
+  inset: 0 auto auto 0;
   pointer-events: none;
 }
 
-.key-date-label {
+.key-date-event-label {
   position: absolute;
-  top: 0;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 1px 2px rgba(15,23,42,0.08);
-  overflow: visible;
-  white-space: nowrap;
-  font-size: 10px;
-  line-height: 14px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  pointer-events: none;
-}
-
-.key-date-line {
-  position: absolute;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--key-date-color);
-  box-shadow: 0 1px 2px rgba(15,23,42,0.16);
+  left: var(--key-date-label-left);
+  top: var(--key-date-top);
+  width: var(--key-date-label-width);
+  min-width: 0;
+  padding: 1px 6px 2px;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+  border-left: 4px solid var(--key-date-color);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
   pointer-events: auto;
 }
 
-.key-date-line::before,
-.key-date-line::after {
-  content: '';
+.key-date-event-title,
+.key-date-event-date {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.key-date-event-title {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.key-date-event-date {
+  color: #475569;
+  font-size: 9.5px;
+  line-height: 12px;
+  font-weight: 650;
+}
+
+.key-date-event-stem {
   position: absolute;
-  top: -4px;
-  bottom: -4px;
-  width: 2px;
-  border-radius: 999px;
+  left: var(--key-date-marker-center);
+  top: calc(var(--key-date-top) + 28px);
+  height: 14px;
+  border-left: 1.5px solid var(--key-date-color);
+  pointer-events: none;
+}
+
+.key-date-event-bar {
+  position: absolute;
+  left: var(--key-date-left);
+  top: calc(var(--key-date-top) + 41px);
+  width: var(--key-date-width);
+  height: 7px;
+  border: 1px solid rgba(15, 23, 42, 0.28);
+  border-radius: 2px;
   background: var(--key-date-color);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14);
+  pointer-events: auto;
 }
 
-.key-date-line::before {
-  left: 0;
+.timeline-container.pdf-export-fill .key-date-event {
+  transform: translateY(var(--key-date-bar-offset, 0px));
 }
 
-.key-date-line::after {
-  right: 0;
+.timeline-container.pdf-export-fill .key-date-event-label {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(100, 116, 139, 0.45);
 }
 
-.timeline-container.pdf-export-fill .key-date-label {
-  color: #0f172a !important;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: none;
-  font-size: 13px;
-  line-height: 18px;
+.timeline-container.pdf-export-fill .key-date-event-title {
+  color: #0f172a;
+  font-size: 12.5px;
   font-weight: 900;
 }
 
-.timeline-container.pdf-export-fill .key-date-line {
-  height: 6px;
-  box-shadow: none;
+.timeline-container.pdf-export-fill .key-date-event-date {
+  color: #334155;
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.timeline-container.pdf-export-fill .key-date-event-bar {
+  height: 8px;
+  border-color: rgba(15, 23, 42, 0.36);
   filter: saturate(1.1) contrast(1.08);
 }
 
-.timeline-container.pdf-export-fill .key-date-line::before,
-.timeline-container.pdf-export-fill .key-date-line::after {
-  top: -6px;
-  bottom: -6px;
+.timeline-container.pdf-export-fill .key-date-event-stem {
+  height: 16px;
+  border-left-width: 2px;
 }

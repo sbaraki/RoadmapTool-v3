@@ -728,21 +728,40 @@ body {
 
 .timeline-container.pdf-export-fill .key-date-band {
   height: calc(var(--key-date-band-base) + var(--key-date-band-extra, 0px)) !important;
-  background: #f5f3ff;
+  background: #f8fafc;
 }
 
-.timeline-container.pdf-export-fill .key-date-bar {
-  height: 20px;
+.timeline-container.pdf-export-fill .key-date-event {
   transform: translateY(var(--key-date-bar-offset, 0px));
-  box-shadow: none;
-  border: 1px solid rgba(15, 23, 42, 0.26);
+}
+
+.timeline-container.pdf-export-fill .key-date-event-label {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(100, 116, 139, 0.45);
+}
+
+.timeline-container.pdf-export-fill .key-date-event-title {
+  color: #0f172a;
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
+.timeline-container.pdf-export-fill .key-date-event-date {
+  color: #334155;
+  font-size: 10.5px;
+  font-weight: 750;
+}
+
+.timeline-container.pdf-export-fill .key-date-event-bar {
+  height: 8px;
+  border-color: rgba(15, 23, 42, 0.36);
   filter: saturate(1.1) contrast(1.08);
 }
 
-.timeline-container.pdf-export-fill .key-date-bar span {
-  font-size: 12px;
-  font-weight: 800;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.48);
+.timeline-container.pdf-export-fill .key-date-event-stem {
+  height: 16px;
+  border-left-width: 2px;
 }
 
 .timeline-container.pdf-export-fill .milestone-band {
@@ -960,26 +979,75 @@ body {
 }
 
 /* ── Timeline Key Date Bands ── */
-.key-date-bar {
+.key-date-event {
+  --key-date-color: #7c3aed;
+  --key-date-left: 0px;
+  --key-date-top: 0px;
+  --key-date-width: 8px;
+  --key-date-label-left: 0px;
+  --key-date-label-width: 168px;
+  --key-date-marker-center: 0px;
   position: absolute;
-  height: 16px;
-  border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(15,23,42,0.16);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  overflow: hidden;
+  inset: 0 auto auto 0;
+  pointer-events: none;
+}
+
+.key-date-event-label {
+  position: absolute;
+  left: var(--key-date-label-left);
+  top: var(--key-date-top);
+  width: var(--key-date-label-width);
+  min-width: 0;
+  padding: 1px 6px 2px;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+  border-left: 4px solid var(--key-date-color);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
   pointer-events: auto;
 }
 
-.key-date-bar span {
+.key-date-event-title,
+.key-date-event-date {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.key-date-event-title {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.key-date-event-date {
+  color: #475569;
+  font-size: 9.5px;
+  line-height: 12px;
+  font-weight: 650;
+}
+
+.key-date-event-stem {
+  position: absolute;
+  left: var(--key-date-marker-center);
+  top: calc(var(--key-date-top) + 28px);
+  height: 14px;
+  border-left: 1.5px solid var(--key-date-color);
+  pointer-events: none;
+}
+
+.key-date-event-bar {
+  position: absolute;
+  left: var(--key-date-left);
+  top: calc(var(--key-date-top) + 41px);
+  width: var(--key-date-width);
+  height: 7px;
+  border: 1px solid rgba(15, 23, 42, 0.28);
+  border-radius: 2px;
+  background: var(--key-date-color);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.14);
+  pointer-events: auto;
 }
