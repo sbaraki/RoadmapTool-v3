@@ -1,8 +1,7 @@
 import { useMemo, type CSSProperties } from 'react'
-import { addDays, differenceInCalendarDays, format, getYear, isSameDay, parseISO } from 'date-fns'
+import { addDays, differenceInCalendarDays, format, getYear, parseISO } from 'date-fns'
 import type { TimelineKeyDate } from '../../types'
 import { dateToPixel } from '../../utils/date'
-import './KeyDateBand.css'
 
 interface KeyDateBandProps {
   keyDates: TimelineKeyDate[]
@@ -15,7 +14,6 @@ interface KeyDateBandProps {
 interface KeyDateInstance {
   id: string
   title: string
-  label: string
   startDate: string
   endDate: string
   color: string
@@ -37,32 +35,6 @@ function createAnnualInstance(keyDate: TimelineKeyDate, year: number) {
   }
 }
 
-function formatDateRange(startDate: string, endDate: string) {
-  const start = parseISO(startDate)
-  const end = parseISO(endDate)
-  if (isSameDay(start, end)) return format(start, 'MMM d, yyyy')
-  if (start.getFullYear() === end.getFullYear()) {
-    return `${format(start, 'MMM d')}–${format(end, 'MMM d, yyyy')}`
-  }
-  return `${format(start, 'MMM d, yyyy')}–${format(end, 'MMM d, yyyy')}`
-}
-
-function createInstance(keyDate: TimelineKeyDate, startDate: string, endDate: string, id = keyDate.id) {
-  const title = keyDate.title.trim() || 'Key date'
-  return {
-    id,
-    title,
-    label: `${title} · ${formatDateRange(startDate, endDate)}`,
-    startDate,
-    endDate,
-    color: keyDate.color,
-  }
-}
-
-function estimateLabelWidth(label: string) {
-  return Math.max(150, label.length * 6.8 + 18)
-}
-
 function assignLanes(
   keyDates: TimelineKeyDate[],
   timelineStart: string,
@@ -78,11 +50,23 @@ function assignLanes(
       for (let year = timelineStartYear - 1; year <= timelineEndYear + 1; year++) {
         const annual = createAnnualInstance(keyDate, year)
         if (overlapsRange(annual.startDate, annual.endDate, timelineStart, timelineEnd)) {
-          instances.push(createInstance(keyDate, annual.startDate, annual.endDate, `${keyDate.id}-${year}`))
+          instances.push({
+            id: `${keyDate.id}-${year}`,
+            title: keyDate.title,
+            startDate: annual.startDate,
+            endDate: annual.endDate,
+            color: keyDate.color,
+          })
         }
       }
     } else if (overlapsRange(keyDate.startDate, keyDate.endDate, timelineStart, timelineEnd)) {
-      instances.push(createInstance(keyDate, keyDate.startDate, keyDate.endDate))
+      instances.push({
+        id: keyDate.id,
+        title: keyDate.title,
+        startDate: keyDate.startDate,
+        endDate: keyDate.endDate,
+        color: keyDate.color,
+      })
     }
   })
 
@@ -94,14 +78,12 @@ function assignLanes(
     .forEach(instance => {
       const left = dateToPixel(timelineStart, instance.startDate, monthWidth)
       const right = dateToPixel(timelineStart, instance.endDate, monthWidth)
-      const labelRight = left + estimateLabelWidth(instance.label)
-      const instanceRight = Math.max(right, labelRight)
       let lane = 0
       while (true) {
         const ranges = occupied.get(lane) ?? []
-        const conflict = ranges.some(([rangeLeft, rangeRight]) => left - 14 < rangeRight && instanceRight + 14 > rangeLeft)
+        const conflict = ranges.some(([rangeLeft, rangeRight]) => left - 6 < rangeRight && right + 6 > rangeLeft)
         if (!conflict) {
-          occupied.set(lane, [...ranges, [left, instanceRight]])
+          occupied.set(lane, [...ranges, [left, right]])
           assigned.push({ ...instance, lane })
           return
         }
@@ -123,16 +105,13 @@ export function KeyDateBand({ keyDates, timelineStart, timelineEnd, monthWidth, 
 
   if (instances.length === 0) return null
 
-  const laneHeight = 44
-  const bandHeight = laneCount * laneHeight + 12
-
   return (
     <div
       className="key-date-band relative z-20 border-b border-outline-variant/30 bg-violet-50/70 backdrop-blur-sm"
       style={{
-        height: bandHeight,
+        height: laneCount * 24 + 12,
         width: totalWidth,
-        '--key-date-band-base': `${bandHeight}px`,
+        '--key-date-band-base': `${laneCount * 24 + 12}px`,
       } as CSSProperties}
       aria-label="Timeline key dates"
     >
@@ -143,31 +122,19 @@ export function KeyDateBand({ keyDates, timelineStart, timelineEnd, monthWidth, 
         const left = Math.max(0, dateToPixel(timelineStart, instance.startDate, monthWidth))
         const right = Math.min(totalWidth, dateToPixel(timelineStart, instance.endDate, monthWidth))
         const width = Math.max(8, right - left)
-        const labelWidth = estimateLabelWidth(instance.label)
-        const labelLeft = Math.max(0, Math.min(left, totalWidth - labelWidth - 8))
-        const top = instance.lane * laneHeight + 8
         return (
-          <div key={instance.id} className="key-date-item" style={{ top }}>
-            <div
-              className="key-date-label"
-              style={{
-                left: labelLeft,
-                color: instance.color,
-              }}
-            >
-              {instance.label}
-            </div>
-            <div
-              className="key-date-line"
-              style={{
-                left,
-                top: 25,
-                width,
-                '--key-date-color': instance.color,
-              } as CSSProperties}
-              title={instance.label}
-              aria-label={instance.label}
-            />
+          <div
+            key={instance.id}
+            className="key-date-bar"
+            style={{
+              left,
+              top: instance.lane * 24 + 8,
+              width,
+              backgroundColor: instance.color,
+            }}
+            title={`${instance.title}: ${instance.startDate} - ${instance.endDate}`}
+          >
+            <span>{instance.title}</span>
           </div>
         )
       })}

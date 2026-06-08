@@ -37,13 +37,13 @@ function isDeliveryPhase(label: string): boolean {
 
 function normalizePhaseTypes(phaseTypes: PhaseType[]): PhaseType[] {
   const renamed: Record<string, string> = {
-    concept: '1. Initiation',
-    initiation: '1. Initiation',
-    'content development': '2. Content Development',
-    'design development': '3. Design Development',
-    implementation: '4. Implementation',
-    delivery: '5. Delivery',
-    deinstall: '6. Deinstall',
+    concept: 'INITIATION',
+    initiation: 'INITIATION',
+    'content development': 'CONTENT DEVELOPMENT',
+    'design development': 'DESIGN DEVELOPMENT',
+    implementation: 'IMPLEMENTATION',
+    delivery: 'DELIVERY',
+    deinstall: 'DEINSTALL',
   }
   const normalized = phaseTypes.map(pt => ({
     id: pt.id,
