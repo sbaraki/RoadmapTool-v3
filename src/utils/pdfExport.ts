@@ -25,6 +25,8 @@ function resetExportSizing(container: HTMLElement) {
   container.style.removeProperty('--collapsed-project-height')
   container.style.removeProperty('--milestone-band-extra')
   container.style.removeProperty('--milestone-marker-offset')
+  container.style.removeProperty('--key-date-band-extra')
+  container.style.removeProperty('--key-date-bar-offset')
 }
 
 function applyPdfVerticalFill(container: HTMLElement, targetAspect: number) {
@@ -41,10 +43,13 @@ function applyPdfVerticalFill(container: HTMLElement, targetAspect: number) {
   const laneRows = container.querySelectorAll('.lane-row').length
   const collapsedRows = container.querySelectorAll('.collapsed-lane-body').length
   const milestoneBands = container.querySelectorAll('.milestone-band').length
+  const keyDateBands = container.querySelectorAll('.key-date-band').length
   const rowUnits = laneRows + collapsedRows
   const milestoneUnits = milestoneBands * 0.7
-  const rowExtra = extraHeight / Math.max(rowUnits + milestoneUnits, 1)
+  const keyDateUnits = keyDateBands * 0.45
+  const rowExtra = extraHeight / Math.max(rowUnits + milestoneUnits + keyDateUnits, 1)
   const milestoneBandExtra = rowExtra * 0.7
+  const keyDateBandExtra = rowExtra * 0.45
   const collapsedProjectTop = (BASE_COLLAPSED_LANE_HEIGHT + rowExtra - BASE_COLLAPSED_PROJECT_HEIGHT) / 2
 
   container.style.setProperty('--lane-row-height', `${BASE_LANE_ROW_HEIGHT + rowExtra}px`)
@@ -55,6 +60,8 @@ function applyPdfVerticalFill(container: HTMLElement, targetAspect: number) {
   container.style.setProperty('--collapsed-project-top', `${Math.max(2, collapsedProjectTop)}px`)
   container.style.setProperty('--milestone-band-extra', `${milestoneBandExtra}px`)
   container.style.setProperty('--milestone-marker-offset', `${milestoneBandExtra / 2}px`)
+  container.style.setProperty('--key-date-band-extra', `${keyDateBandExtra}px`)
+  container.style.setProperty('--key-date-bar-offset', `${keyDateBandExtra / 2}px`)
 }
 
 function formatExportDate(value: string) {
