@@ -663,6 +663,36 @@ body {
   font-weight: 800;
 }
 
+.timeline-container.pdf-export-fill .key-date-band {
+  height: calc(var(--key-date-band-base) + var(--key-date-band-extra, 0px)) !important;
+  background: #f5f3ff;
+}
+
+.timeline-container.pdf-export-fill .key-date-item {
+  transform: translateY(var(--key-date-item-offset, 0px));
+}
+
+.timeline-container.pdf-export-fill .key-date-label {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: none;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 900;
+}
+
+.timeline-container.pdf-export-fill .key-date-line {
+  height: 6px;
+  box-shadow: none;
+  filter: saturate(1.1) contrast(1.08);
+}
+
+.timeline-container.pdf-export-fill .key-date-line::before,
+.timeline-container.pdf-export-fill .key-date-line::after {
+  top: -6px;
+  bottom: -6px;
+}
+
 .timeline-container.pdf-export-fill .milestone-band {
   height: calc(var(--milestone-band-base) + var(--milestone-band-extra, 0px)) !important;
 }
@@ -814,4 +844,57 @@ body {
     color: #0f172a !important;
     font-weight: 800 !important;
   }
+}
+
+/* ── Timeline Key Date Bands ── */
+.key-date-item {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 38px;
+  pointer-events: none;
+}
+
+.key-date-label {
+  position: absolute;
+  top: 0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.08);
+  overflow: visible;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.key-date-line {
+  position: absolute;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--key-date-color);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.16);
+  pointer-events: auto;
+}
+
+.key-date-line::before,
+.key-date-line::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--key-date-color);
+}
+
+.key-date-line::before {
+  left: 0;
+}
+
+.key-date-line::after {
+  right: 0;
 }

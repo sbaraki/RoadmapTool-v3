@@ -13,6 +13,7 @@ import { GalleryLane } from './GalleryLane'
 import { addDaysToString, addMonthsToString, dateToPixel, formatDate, pixelDeltaToDays, snapToWeek } from '../../utils/date'
 import { parseISO } from 'date-fns'
 import { MilestoneMarker } from './MilestoneMarker'
+import { KeyDateBand } from './KeyDateBand'
 import type { ProjectCheckpoint } from '../../types'
 import type { CSSProperties } from 'react'
 
@@ -64,6 +65,7 @@ function computeMasterMilestoneLanes(
 export function Timeline() {
   const galleries = useStore(s => s.galleries)
   const exhibitions = useStore(s => s.exhibitions)
+  const keyDates = useStore(s => s.keyDates)
   const timelineStartDate = useStore(s => s.timelineStartDate)
   const timelineEndDate = useStore(s => s.timelineEndDate)
   const monthWidth = useStore(s => s.monthWidth)
@@ -206,6 +208,14 @@ export function Timeline() {
 
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="relative z-10">
+                <KeyDateBand
+                  keyDates={keyDates}
+                  timelineStart={timelineStartDate}
+                  timelineEnd={timelineEndDate}
+                  monthWidth={monthWidth}
+                  totalWidth={totalWidth}
+                />
+
                 {showMilestones && allMilestones.length > 0 && (
                   <div
                     className="milestone-band relative border-b border-outline-variant/30 bg-slate-50/80 backdrop-blur-sm z-20"
