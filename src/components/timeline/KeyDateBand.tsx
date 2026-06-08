@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties } from 'react'
 import { addDays, differenceInCalendarDays, format, getYear, isSameDay, parseISO } from 'date-fns'
 import type { TimelineKeyDate } from '../../types'
 import { dateToPixel } from '../../utils/date'
+import './KeyDateBand.css'
 
 interface KeyDateBandProps {
   keyDates: TimelineKeyDate[]
