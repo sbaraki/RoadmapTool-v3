@@ -1,0 +1,120 @@
+/* ── Timeline Key Date Bands ── */
+.key-date-band {
+  overflow: visible;
+}
+
+.key-date-item {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.key-date-label {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px 3px 6px;
+  border: 1px solid rgba(15,23,42,0.14);
+  border-left: 4px solid var(--key-date-color);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 5px rgba(15,23,42,0.12);
+  overflow: visible;
+  white-space: nowrap;
+  color: #0f172a;
+  font-size: 11px;
+  line-height: 15px;
+  font-weight: 850;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.key-date-label-title {
+  color: #0f172a;
+}
+
+.key-date-label-date {
+  color: #475569;
+  font-weight: 750;
+}
+
+.key-date-guide {
+  position: absolute;
+  z-index: 1;
+  top: 22px;
+  width: 2px;
+  height: 13px;
+  border-radius: 999px;
+  background: var(--key-date-color);
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+.key-date-line {
+  position: absolute;
+  z-index: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--key-date-color);
+  box-shadow: 0 1px 3px rgba(15,23,42,0.2);
+  pointer-events: auto;
+}
+
+.key-date-line::before,
+.key-date-line::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--key-date-color);
+}
+
+.key-date-line::before {
+  left: 0;
+}
+
+.key-date-line::after {
+  right: 0;
+}
+
+.timeline-container.pdf-export-fill .key-date-label {
+  border-color: rgba(15, 23, 42, 0.25);
+  background: #ffffff;
+  box-shadow: none;
+  color: #0f172a !important;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 900;
+}
+
+.timeline-container.pdf-export-fill .key-date-label-title,
+.timeline-container.pdf-export-fill .key-date-label-date {
+  color: #0f172a !important;
+  font-weight: 900;
+}
+
+.timeline-container.pdf-export-fill .key-date-line {
+  height: 8px;
+  box-shadow: none;
+  filter: saturate(1.16) contrast(1.12);
+}
+
+.timeline-container.pdf-export-fill .key-date-guide {
+  top: 27px;
+  height: 12px;
+  opacity: 1;
+}
+
+.timeline-container.pdf-export-fill .key-date-line::before,
+.timeline-container.pdf-export-fill .key-date-line::after {
+  top: -7px;
+  bottom: -7px;
+}
