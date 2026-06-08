@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import { format, parseISO } from 'date-fns'
 import type { Gallery, ExhibitionProject } from '../../types'
 import { ProjectBar } from './ProjectBar'
 import { STATUS_COLORS, getGalleryColor } from '../../utils/color'
@@ -14,6 +15,30 @@ interface GalleryLaneProps {
   isCollapsed: boolean
 }
 
+const PERMANENT_PDF_LABEL_WIDTH = 150
+const PERMANENT_PDF_LANE_HEIGHT = 22
+const PERMANENT_PDF_MARKER_GAP = 12
+
+function formatPermanentMilestoneDate(value: string) {
+  return format(parseISO(value), 'MMM d, yyyy')
+}
+
+function getPermanentPdfMilestoneLanes(projects: ExhibitionProject[], timelineStart: string, monthWidth: number) {
+  const occupiedRightByLane: number[] = []
+
+  return projects
+    .map(project => ({
+      project,
+      left: dateToPixel(timelineStart, project.endDate, monthWidth),
+    }))
+    .sort((a, b) => a.left - b.left)
+    .map(item => {
+      let lane = occupiedRightByLane.findIndex(right => item.left > right + PERMANENT_PDF_MARKER_GAP)
+      if (lane === -1) lane = occupiedRightByLane.length
+      occupiedRightByLane[lane] = item.left + PERMANENT_PDF_LABEL_WIDTH
+      return { ...item, lane }
+    })
+}
 
 
 export function GalleryLane({
@@ -35,6 +60,15 @@ export function GalleryLane({
 
   const totalWidth = Math.max(monthWidth, dateToPixel(timelineStart, timelineEnd, monthWidth))
   const galleryColor = getGalleryColor(gallery.name)
+  const isPermanent = gallery.kind === 'permanent'
+  const permanentPdfMilestones = useMemo(
+    () => getPermanentPdfMilestoneLanes(sortedProjects, timelineStart, monthWidth),
+    [sortedProjects, timelineStart, monthWidth],
+  )
+  const permanentPdfLaneCount = permanentPdfMilestones.length
+    ? Math.max(...permanentPdfMilestones.map(item => item.lane)) + 1
+    : 1
+  const permanentPdfBodyHeight = Math.max(42, permanentPdfLaneCount * PERMANENT_PDF_LANE_HEIGHT + 18)
 
   function handleDoubleClick(e: React.MouseEvent<HTMLElement>) {
     if ((e.target as HTMLElement).closest('[role="button"]')) return
@@ -128,12 +162,51 @@ export function GalleryLane({
   }
 
   return (
-    <div className="border-b border-outline-variant/30">
+    <div className={`border-b border-outline-variant/30 ${isPermanent ? 'permanent-gallery-lane' : ''}`}>
       <div className="sticky left-0 z-10 flex items-center gap-2 px-3 py-1.5 bg-surface-container-low/60 border-b border-outline-variant/20">
         <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: galleryColor }} />
         <span className="text-label-md text-slate-muted tracking-wide uppercase">{gallery.name}</span>
         <span className="text-mono-data text-xs text-slate-muted/60">{projects.length}</span>
       </div>
+
+      {isPermanent && (
+        <div
+          className="permanent-pdf-summary-body relative overflow-hidden"
+          style={{
+            width: totalWidth,
+            height: permanentPdfBodyHeight,
+            '--permanent-pdf-body-height': `${permanentPdfBodyHeight}px`,
+          } as CSSProperties}
+          onDoubleClick={handleDoubleClick}
+        >
+          {permanentPdfMilestones.length === 0 ? (
+            <span className="permanent-pdf-empty absolute">No permanent milestones</span>
+          ) : (
+            permanentPdfMilestones.map(({ project, left, lane }) => {
+              const statusColor = STATUS_COLORS[project.status] ?? '#94a3b8'
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  className="permanent-pdf-milestone absolute flex items-start gap-1.5 text-left"
+                  style={{
+                    left,
+                    top: lane * PERMANENT_PDF_LANE_HEIGHT + 9,
+                    '--permanent-milestone-color': statusColor,
+                  } as CSSProperties}
+                  onClick={() => setSelectedProject(project.id)}
+                >
+                  <span className="permanent-pdf-milestone-dot" />
+                  <span className="permanent-pdf-milestone-label">
+                    <span className="permanent-pdf-milestone-title">{project.title}</span>
+                    <span className="permanent-pdf-milestone-date">{formatPermanentMilestoneDate(project.endDate)}</span>
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+      )}
 
       {sortedProjects.map(project => {
         return (

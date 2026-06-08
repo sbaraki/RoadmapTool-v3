@@ -40,11 +40,17 @@ function applyPdfVerticalFill(container: HTMLElement, targetAspect: number) {
 
   if (extraHeight <= 1) return
 
-  const laneRows = container.querySelectorAll('.lane-row').length
-  const collapsedRows = container.querySelectorAll('.collapsed-lane-body').length
-  const milestoneBands = container.querySelectorAll('.milestone-band').length
-  const keyDateBands = container.querySelectorAll('.key-date-band').length
-  const rowUnits = laneRows + collapsedRows
+  const visibleElementCount = (selector: string) =>
+    Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
+      element => getComputedStyle(element).display !== 'none',
+    ).length
+
+  const laneRows = visibleElementCount('.lane-row')
+  const collapsedRows = visibleElementCount('.collapsed-lane-body')
+  const permanentSummaries = visibleElementCount('.permanent-pdf-summary-body')
+  const milestoneBands = visibleElementCount('.milestone-band')
+  const keyDateBands = visibleElementCount('.key-date-band')
+  const rowUnits = laneRows + collapsedRows + permanentSummaries * 0.45
   const milestoneUnits = milestoneBands * 0.7
   const keyDateUnits = keyDateBands * 0.45
   const rowExtra = extraHeight / Math.max(rowUnits + milestoneUnits + keyDateUnits, 1)

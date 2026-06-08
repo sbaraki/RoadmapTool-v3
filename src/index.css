@@ -545,6 +545,55 @@ body {
   height: var(--collapsed-project-height, 38px);
 }
 
+
+.permanent-pdf-summary-body {
+  display: none;
+}
+
+.permanent-pdf-milestone {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+}
+
+.permanent-pdf-milestone-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: var(--permanent-milestone-color, #64748b);
+}
+
+.permanent-pdf-milestone-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 142px;
+  min-width: 0;
+  transform: translateY(-1px);
+}
+
+.permanent-pdf-milestone-title,
+.permanent-pdf-milestone-date {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.permanent-pdf-empty {
+  left: 12px;
+  top: 13px;
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(100, 116, 139, 0.72);
+}
+
 /* ── PDF Export ── */
 .timeline-container.pdf-export-fill {
   background: #ffffff;
@@ -742,6 +791,67 @@ body {
 
 .timeline-container.pdf-export-fill .delivery-pin::after {
   display: none;
+}
+
+.timeline-container.pdf-export-fill .permanent-gallery-lane {
+  background: #fbfdff;
+}
+
+.timeline-container.pdf-export-fill .permanent-gallery-lane > .sticky {
+  background: #f8fafc;
+  opacity: 0.86;
+}
+
+.timeline-container.pdf-export-fill .permanent-gallery-lane .project-block {
+  display: none;
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-summary-body {
+  display: block;
+  height: var(--permanent-pdf-body-height) !important;
+  min-height: 42px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.32);
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-milestone {
+  min-width: 148px;
+  max-width: 148px;
+  opacity: 0.82;
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-milestone::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: -9px;
+  height: 8px;
+  border-left: 1px solid rgba(100, 116, 139, 0.48);
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-milestone-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.24);
+  box-shadow: none;
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-milestone-title {
+  color: #334155;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-milestone-date {
+  color: #64748b;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.timeline-container.pdf-export-fill .permanent-pdf-empty {
+  font-size: 11px;
+  color: #64748b;
 }
 
 .timeline-container.pdf-export-fill .timeline-resize-handle,
