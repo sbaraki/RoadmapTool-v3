@@ -3,7 +3,6 @@ import type {
   Gallery,
   PhaseType,
   ExhibitionProject,
-  TimelineKeyDate,
   ProjectCheckpoint,
   ProjectPhase,
   PortfolioData,
@@ -71,7 +70,6 @@ interface StoreState {
   galleries: Gallery[]
   phaseTypes: PhaseType[]
   exhibitions: ExhibitionProject[]
-  keyDates: TimelineKeyDate[]
   selectedProjectId: string | null
   editingCheckpoint: { projectId: string; checkpointId: string } | null
   collapsedLanes: string[]
@@ -115,9 +113,6 @@ interface StoreState {
   addProject: (project?: Partial<ExhibitionProject>) => ExhibitionProject
   updateProject: (id: string, updates: Partial<ExhibitionProject>) => void
   removeProject: (id: string) => void
-  addKeyDate: (keyDate?: Partial<TimelineKeyDate>) => void
-  updateKeyDate: (id: string, updates: Partial<TimelineKeyDate>) => void
-  removeKeyDate: (id: string) => void
   duplicateProject: (id: string) => void
   setSelectedProject: (id: string | null) => void
   setEditingCheckpoint: (value: { projectId: string; checkpointId: string } | null) => void
@@ -187,14 +182,6 @@ function normalizePortfolioData(data: Partial<PortfolioData>): PortfolioData {
         return phaseType ? { ...phase, label: phaseType.label } : phase
       }),
     })),
-    keyDates: (data.keyDates ?? []).map(keyDate => ({
-      id: keyDate.id || generateId(),
-      title: keyDate.title?.trim() || 'Key date',
-      startDate: keyDate.startDate,
-      endDate: keyDate.endDate && keyDate.endDate >= keyDate.startDate ? keyDate.endDate : keyDate.startDate,
-      color: keyDate.color || '#7c3aed',
-      recursAnnually: keyDate.recursAnnually ?? false,
-    })).filter(keyDate => keyDate.startDate),
     timelineStartDate: data.timelineStartDate ?? defaultTimelineStart(),
     timelineEndDate: data.timelineEndDate ?? defaultTimelineEnd(),
     monthWidth: data.monthWidth ?? 40,
@@ -206,12 +193,12 @@ function normalizePortfolioData(data: Partial<PortfolioData>): PortfolioData {
 
 function createPortfolioData(state: StoreState): PortfolioData {
   const {
-    museumName, galleries, phaseTypes, exhibitions, keyDates,
+    museumName, galleries, phaseTypes, exhibitions,
     timelineStartDate, timelineEndDate, monthWidth,
     collapsedLanes, showMilestones, sidebarOpen,
   } = state
   return {
-    museumName, galleries, phaseTypes, exhibitions, keyDates,
+    museumName, galleries, phaseTypes, exhibitions,
     timelineStartDate, timelineEndDate, monthWidth,
     collapsedLanes, showMilestones, sidebarOpen,
   }
@@ -285,7 +272,6 @@ function applyPortfolioData(data: PortfolioData) {
     galleries: data.galleries,
     phaseTypes: data.phaseTypes,
     exhibitions: data.exhibitions,
-    keyDates: data.keyDates,
     timelineStartDate: data.timelineStartDate,
     timelineEndDate: data.timelineEndDate,
     monthWidth: data.monthWidth,
@@ -303,7 +289,6 @@ export const useStore = create<StoreState>()((set, get) => ({
   galleries: DEFAULT_GALLERIES,
   phaseTypes: DEFAULT_PHASE_TYPES,
   exhibitions: [],
-  keyDates: [],
   selectedProjectId: null,
   editingCheckpoint: null,
   collapsedLanes: [],
@@ -324,16 +309,16 @@ export const useStore = create<StoreState>()((set, get) => ({
   ...createInitialHistoryState(),
 
   commitHistory: () => {
-    const { museumName, galleries, phaseTypes, exhibitions, keyDates, history } = get()
-    const snapshot = createSnapshot(museumName, galleries, phaseTypes, exhibitions, keyDates)
+    const { museumName, galleries, phaseTypes, exhibitions, history } = get()
+    const snapshot = createSnapshot(museumName, galleries, phaseTypes, exhibitions)
     set({ history: [...history.slice(-49), snapshot], future: [] })
   },
 
   undo: () => {
-    const { history, museumName, galleries, phaseTypes, exhibitions, keyDates, future } = get()
+    const { history, museumName, galleries, phaseTypes, exhibitions, future } = get()
     if (history.length === 0) return
     const prev = history[history.length - 1]
-    const current = createSnapshot(museumName, galleries, phaseTypes, exhibitions, keyDates)
+    const current = createSnapshot(museumName, galleries, phaseTypes, exhibitions)
     set({
       ...prev,
       history: history.slice(0, -1),
@@ -342,10 +327,10 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   redo: () => {
-    const { future, museumName, galleries, phaseTypes, exhibitions, keyDates, history } = get()
+    const { future, museumName, galleries, phaseTypes, exhibitions, history } = get()
     if (future.length === 0) return
     const next = future[future.length - 1]
-    const current = createSnapshot(museumName, galleries, phaseTypes, exhibitions, keyDates)
+    const current = createSnapshot(museumName, galleries, phaseTypes, exhibitions)
     set({
       ...next,
       future: future.slice(0, -1),
@@ -472,42 +457,6 @@ export const useStore = create<StoreState>()((set, get) => ({
       exhibitions: s.exhibitions.filter(p => p.id !== id),
       selectedProjectId: s.selectedProjectId === id ? null : s.selectedProjectId,
     }))
-  },
-
-  addKeyDate: (partial) => {
-    get().commitHistory()
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const startDate = formatDate(new Date(currentYear, 4, 1))
-    const endDate = formatDate(new Date(currentYear, 4, 31))
-    const keyDate: TimelineKeyDate = {
-      id: generateId(),
-      title: 'Site opening workflows',
-      startDate,
-      endDate,
-      color: '#7c3aed',
-      recursAnnually: true,
-      ...partial,
-    }
-    if (keyDate.endDate < keyDate.startDate) keyDate.endDate = keyDate.startDate
-    set(s => ({ keyDates: [...s.keyDates, keyDate] }))
-  },
-
-  updateKeyDate: (id, updates) => {
-    get().commitHistory()
-    set(s => ({
-      keyDates: s.keyDates.map(keyDate => {
-        if (keyDate.id !== id) return keyDate
-        const next = { ...keyDate, ...updates }
-        if (next.endDate < next.startDate) next.endDate = next.startDate
-        return next
-      }),
-    }))
-  },
-
-  removeKeyDate: (id) => {
-    get().commitHistory()
-    set(s => ({ keyDates: s.keyDates.filter(keyDate => keyDate.id !== id) }))
   },
 
   duplicateProject: (id) => {
@@ -704,7 +653,6 @@ export const useStore = create<StoreState>()((set, get) => ({
       galleries: data.galleries,
       phaseTypes: data.phaseTypes,
       exhibitions: data.exhibitions,
-      keyDates: get().keyDates,
       timelineStartDate: get().timelineStartDate,
       timelineEndDate: get().timelineEndDate,
       monthWidth: get().monthWidth,

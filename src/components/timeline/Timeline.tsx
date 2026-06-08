@@ -14,6 +14,7 @@ import { addDaysToString, addMonthsToString, dateToPixel, formatDate, pixelDelta
 import { parseISO } from 'date-fns'
 import { MilestoneMarker } from './MilestoneMarker'
 import { KeyDateBand } from './KeyDateBand'
+import { selectKeyDates, useKeyDateStore } from '../../store/useKeyDateStore'
 import type { ProjectCheckpoint } from '../../types'
 import type { CSSProperties } from 'react'
 
@@ -65,7 +66,8 @@ function computeMasterMilestoneLanes(
 export function Timeline() {
   const galleries = useStore(s => s.galleries)
   const exhibitions = useStore(s => s.exhibitions)
-  const keyDates = useStore(s => s.keyDates)
+  const activeScenarioId = useStore(s => s.activeScenarioId)
+  const keyDates = useKeyDateStore(s => selectKeyDates(s.keyDatesByScenario, activeScenarioId))
   const timelineStartDate = useStore(s => s.timelineStartDate)
   const timelineEndDate = useStore(s => s.timelineEndDate)
   const monthWidth = useStore(s => s.monthWidth)

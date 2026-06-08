@@ -1,13 +1,15 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../../store/useStore'
+import { selectKeyDates, useKeyDateStore } from '../../store/useKeyDateStore'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 
 export function KeyDateEditor() {
-  const keyDates = useStore(s => s.keyDates)
-  const addKeyDate = useStore(s => s.addKeyDate)
-  const updateKeyDate = useStore(s => s.updateKeyDate)
-  const removeKeyDate = useStore(s => s.removeKeyDate)
+  const activeScenarioId = useStore(s => s.activeScenarioId)
+  const keyDates = useKeyDateStore(s => selectKeyDates(s.keyDatesByScenario, activeScenarioId))
+  const addKeyDate = useKeyDateStore(s => s.addKeyDate)
+  const updateKeyDate = useKeyDateStore(s => s.updateKeyDate)
+  const removeKeyDate = useKeyDateStore(s => s.removeKeyDate)
 
   return (
     <section className="border-t border-outline-variant pt-4">
@@ -18,7 +20,7 @@ export function KeyDateEditor() {
             Add labeled date lines for annual workflows, holidays, blackout periods, or any reminder that should sit above every gallery lane.
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => addKeyDate()}>
+        <Button variant="secondary" size="sm" onClick={() => addKeyDate(activeScenarioId)}>
           <Plus size={14} /> Add Key Date
         </Button>
       </div>
@@ -35,31 +37,31 @@ export function KeyDateEditor() {
                 <Input
                   label="Label"
                   value={keyDate.title}
-                  onChange={e => updateKeyDate(keyDate.id, { title: e.target.value })}
+                  onChange={e => updateKeyDate(activeScenarioId, keyDate.id, { title: e.target.value })}
                   placeholder="Site opening workflows"
                 />
                 <Input
                   label="Start"
                   type="date"
                   value={keyDate.startDate}
-                  onChange={e => updateKeyDate(keyDate.id, { startDate: e.target.value })}
+                  onChange={e => updateKeyDate(activeScenarioId, keyDate.id, { startDate: e.target.value })}
                 />
                 <Input
                   label="End"
                   type="date"
                   value={keyDate.endDate}
-                  onChange={e => updateKeyDate(keyDate.id, { endDate: e.target.value })}
+                  onChange={e => updateKeyDate(activeScenarioId, keyDate.id, { endDate: e.target.value })}
                 />
                 <Input
                   label="Color"
                   type="color"
                   value={keyDate.color}
-                  onChange={e => updateKeyDate(keyDate.id, { color: e.target.value })}
+                  onChange={e => updateKeyDate(activeScenarioId, keyDate.id, { color: e.target.value })}
                   className="h-[34px] px-1 py-1"
                 />
                 <button
                   type="button"
-                  onClick={() => removeKeyDate(keyDate.id)}
+                  onClick={() => removeKeyDate(activeScenarioId, keyDate.id)}
                   className="mb-0.5 inline-flex h-[34px] w-[34px] items-center justify-center rounded-md text-error hover:bg-error-container cursor-pointer"
                   aria-label={`Remove ${keyDate.title || 'key date'}`}
                   title="Remove key date"
@@ -71,7 +73,7 @@ export function KeyDateEditor() {
                 <input
                   type="checkbox"
                   checked={keyDate.recursAnnually}
-                  onChange={e => updateKeyDate(keyDate.id, { recursAnnually: e.target.checked })}
+                  onChange={e => updateKeyDate(activeScenarioId, keyDate.id, { recursAnnually: e.target.checked })}
                   className="h-4 w-4 rounded border-outline-variant text-secondary"
                 />
                 Repeat every year using the same month and day range

@@ -1,11 +1,10 @@
-import type { Gallery, PhaseType, ExhibitionProject, TimelineKeyDate } from '../types'
+import type { Gallery, PhaseType, ExhibitionProject } from '../types'
 
 export interface HistorySnapshot {
   museumName: string
   galleries: Gallery[]
   phaseTypes: PhaseType[]
   exhibitions: ExhibitionProject[]
-  keyDates: TimelineKeyDate[]
 }
 
 export interface HistoryState {
@@ -21,14 +20,12 @@ export function createSnapshot(
   museumName: string,
   galleries: Gallery[],
   phaseTypes: PhaseType[],
-  exhibitions: ExhibitionProject[],
-  keyDates: TimelineKeyDate[]
+  exhibitions: ExhibitionProject[]
 ): HistorySnapshot {
   return {
     museumName,
     galleries: structuredClone(galleries),
     phaseTypes: structuredClone(phaseTypes),
     exhibitions: structuredClone(exhibitions),
-    keyDates: structuredClone(keyDates),
   }
 }

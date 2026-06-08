@@ -27,15 +27,6 @@ export interface ProjectCheckpoint {
   color?: string
 }
 
-export interface TimelineKeyDate {
-  id: string
-  title: string
-  startDate: string
-  endDate: string
-  color: string
-  recursAnnually: boolean
-}
-
 export type ProjectStatus = 'TBC' | 'In Development' | 'Open to Public' | 'Closed'
 
 export type ScheduleMode = 'range' | 'single-date'
@@ -62,7 +53,6 @@ export interface PortfolioData {
   galleries: Gallery[]
   phaseTypes: PhaseType[]
   exhibitions: ExhibitionProject[]
-  keyDates: TimelineKeyDate[]
   timelineStartDate: string
   timelineEndDate: string
   monthWidth: number
