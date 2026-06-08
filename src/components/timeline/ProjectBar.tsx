@@ -98,8 +98,8 @@ export function ProjectBar({
   const containerWidth = isRange ? width + preWidth + postWidth : width
   const runLabel = `${format(projStart, 'MMM yyyy')} - ${format(projEnd, 'MMM yyyy')}`
   const showDatePillsAsTbc = project.showDatePillsAsTbc ?? false
-  const openDateLabel = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d')
-  const closeDateLabel = showDatePillsAsTbc ? 'TBC' : format(projEnd, 'MMM d')
+  const openDateLabel = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d').toUpperCase()
+  const closeDateLabel = showDatePillsAsTbc ? 'TBC' : format(projEnd, 'MMM d').toUpperCase()
   const openDateTitle = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d, yyyy')
   const closeDateTitle = showDatePillsAsTbc ? 'TBC' : format(projEnd, 'MMM d, yyyy')
   const singleDateLabel = format(projStart, monthWidth >= 42 ? 'MMM d, yyyy' : 'MMM d')
