@@ -610,8 +610,8 @@ body {
 .timeline-container.pdf-export-fill .timeline-year-header {
   background: #ffffff;
   color: #111827;
-  font-size: 15px;
-  font-weight: 750;
+  font-size: 16px;
+  font-weight: 800;
   border-right-color: #94a3b8;
   padding-top: 7px;
   padding-bottom: 7px;
@@ -621,7 +621,7 @@ body {
   background: #f8fafc;
   color: #1f2937;
   border-right-color: #94a3b8;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -631,7 +631,7 @@ body {
   background: #ffffff;
   color: #1f2937;
   border-right-color: #cbd5e1;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -641,8 +641,8 @@ body {
   background: #ffffff;
   color: #334155;
   border-right-color: #cbd5e1;
-  font-size: 14.5px;
-  font-weight: 750;
+  font-size: 15.5px;
+  font-weight: 800;
   padding-top: 4px;
   padding-bottom: 4px;
 }
@@ -663,6 +663,25 @@ body {
 
 .timeline-container.pdf-export-fill .project-block {
   border-bottom-color: rgba(148, 163, 184, 0.55);
+}
+
+.timeline-container.pdf-export-fill .sticky .text-label-md {
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.timeline-container.pdf-export-fill .collapsed-project-preview .text-mono-data:first-child,
+.timeline-container.pdf-export-fill .collapsed-project-single .text-mono-data:first-of-type {
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.timeline-container.pdf-export-fill .collapsed-project-preview .text-mono-data:last-child,
+.timeline-container.pdf-export-fill .collapsed-project-single .text-mono-data:last-child {
+  font-size: 10.5px;
+  font-weight: 650;
 }
 
 .timeline-container.pdf-export-fill .lane-row:hover,
@@ -687,8 +706,8 @@ body {
 .timeline-container.pdf-export-fill .timeline-bar-label {
   display: block;
   flex: 1 1 auto;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 17.5px;
+  font-weight: 850;
   line-height: 1;
   min-width: 0;
   overflow: hidden;
@@ -700,8 +719,8 @@ body {
   display: block;
   color: #ffffff;
   flex: 0 0 auto;
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 750;
   line-height: 1;
   overflow: visible;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
@@ -723,8 +742,8 @@ body {
 
 .timeline-container.pdf-export-fill .phase-segment-label {
   color: #0f172a;
-  font-size: 12.5px;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 850;
 }
 
 .timeline-container.pdf-export-fill .key-date-band {
@@ -744,14 +763,14 @@ body {
 
 .timeline-container.pdf-export-fill .key-date-event-title {
   color: #0f172a;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 900;
 }
 
 .timeline-container.pdf-export-fill .key-date-event-date {
   color: #334155;
-  font-size: 10.5px;
-  font-weight: 750;
+  font-size: 11.5px;
+  font-weight: 800;
 }
 
 .timeline-container.pdf-export-fill .key-date-event-bar {
@@ -776,14 +795,14 @@ body {
 .timeline-container.pdf-export-fill .milestone-label {
   color: #0f172a !important;
   box-shadow: none;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 15.5px;
+  font-weight: 850;
 }
 
 .timeline-container.pdf-export-fill .milestone-meta {
   color: #334155;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .timeline-container.pdf-export-fill .milestone-square {
@@ -797,14 +816,14 @@ body {
 }
 
 .timeline-container.pdf-export-fill .delivery-pin {
-  min-width: 82px;
-  height: 20px;
+  min-width: 92px;
+  height: 22px;
   color: #b91c1c;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.03em;
   border-radius: 6px;
-  top: -18px;
+  top: -20px;
   border-color: #fecdd3;
   background: #fff1f2;
   box-shadow: none;
@@ -812,8 +831,8 @@ body {
 
 .timeline-container.pdf-export-fill .delivery-pin-date {
   color: #7f1d1d;
-  font-size: 10px;
-  font-weight: 750;
+  font-size: 11px;
+  font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -844,8 +863,8 @@ body {
 }
 
 .timeline-container.pdf-export-fill .permanent-pdf-milestone {
-  min-width: 148px;
-  max-width: 148px;
+  min-width: 158px;
+  max-width: 158px;
   opacity: 0.82;
 }
 
@@ -867,20 +886,20 @@ body {
 
 .timeline-container.pdf-export-fill .permanent-pdf-milestone-title {
   color: #334155;
-  font-size: 10.5px;
-  font-weight: 800;
+  font-size: 11.5px;
+  font-weight: 850;
   line-height: 1.08;
 }
 
 .timeline-container.pdf-export-fill .permanent-pdf-milestone-date {
   color: #64748b;
-  font-size: 9.5px;
-  font-weight: 700;
+  font-size: 10.5px;
+  font-weight: 750;
   line-height: 1.08;
 }
 
 .timeline-container.pdf-export-fill .permanent-pdf-empty {
-  font-size: 11px;
+  font-size: 12px;
   color: #64748b;
 }
 
