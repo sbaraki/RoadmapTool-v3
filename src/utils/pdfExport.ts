@@ -94,16 +94,16 @@ function drawMetadata(pdf: jsPDF, now: Date, pageW: number) {
   pdf.line(left, PAGE_MARGIN_IN + METADATA_HEIGHT_IN, right, PAGE_MARGIN_IN + METADATA_HEIGHT_IN)
 
   pdf.setFont('helvetica', 'bold')
-  pdf.setFontSize(12)
+  pdf.setFontSize(13)
   pdf.setTextColor(15, 23, 42)
   pdf.text(metadata.title, left, top)
 
   pdf.setFont('helvetica', 'normal')
-  pdf.setFontSize(9)
+  pdf.setFontSize(10)
   pdf.setTextColor(30, 41, 59)
   pdf.text(`${metadata.scenarioName}  |  ${metadata.range}`, left, top + 0.18)
 
-  pdf.setFontSize(8.25)
+  pdf.setFontSize(9)
   pdf.setTextColor(51, 65, 85)
   pdf.text(
     `Exported ${format(now, 'MMM d, yyyy h:mm a')}`,
