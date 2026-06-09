@@ -177,6 +177,5 @@ export async function exportTimelineToPdf(): Promise<void> {
 
   const dateStr = now.toISOString().slice(0, 10)
 
-
-  pdf.save(`RAM_ExhibitionPortfolio_${dateStr}.pdf`)
+  pdf.save(`RAM_ExhibitionsRoadmap_${dateStr}.pdf`)
 }
