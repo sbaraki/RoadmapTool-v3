@@ -574,16 +574,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  max-width: 142px;
   min-width: 0;
+  max-width: none;
   transform: translateY(-1px);
 }
 
 .permanent-pdf-milestone-title,
 .permanent-pdf-milestone-date {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -863,8 +863,9 @@ body {
 }
 
 .timeline-container.pdf-export-fill .permanent-pdf-milestone {
+  width: var(--permanent-milestone-width, max-content);
   min-width: 158px;
-  max-width: 158px;
+  max-width: none;
   opacity: 0.82;
 }
 

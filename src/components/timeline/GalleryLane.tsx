@@ -15,9 +15,18 @@ interface GalleryLaneProps {
   isCollapsed: boolean
 }
 
-const PERMANENT_PDF_LABEL_WIDTH = 150
+const PERMANENT_PDF_LABEL_MIN_WIDTH = 150
 const PERMANENT_PDF_LANE_HEIGHT = 22
 const PERMANENT_PDF_MARKER_GAP = 12
+const PERMANENT_PDF_TITLE_CHARACTER_WIDTH = 6.8
+const PERMANENT_PDF_MARKER_CHROME_WIDTH = 18
+
+function getPermanentPdfMilestoneWidth(project: ExhibitionProject) {
+  return Math.max(
+    PERMANENT_PDF_LABEL_MIN_WIDTH,
+    Math.ceil(project.title.length * PERMANENT_PDF_TITLE_CHARACTER_WIDTH) + PERMANENT_PDF_MARKER_CHROME_WIDTH,
+  )
+}
 
 function formatPermanentMilestoneDate(value: string) {
   return format(parseISO(value), 'MMM d, yyyy')
@@ -30,12 +39,13 @@ function getPermanentPdfMilestoneLanes(projects: ExhibitionProject[], timelineSt
     .map(project => ({
       project,
       left: dateToPixel(timelineStart, project.endDate, monthWidth),
+      width: getPermanentPdfMilestoneWidth(project),
     }))
     .sort((a, b) => a.left - b.left)
     .map(item => {
       let lane = occupiedRightByLane.findIndex(right => item.left > right + PERMANENT_PDF_MARKER_GAP)
       if (lane === -1) lane = occupiedRightByLane.length
-      occupiedRightByLane[lane] = item.left + PERMANENT_PDF_LABEL_WIDTH
+      occupiedRightByLane[lane] = item.left + item.width
       return { ...item, lane }
     })
 }
@@ -182,7 +192,7 @@ export function GalleryLane({
           {permanentPdfMilestones.length === 0 ? (
             <span className="permanent-pdf-empty absolute">No permanent milestones</span>
           ) : (
-            permanentPdfMilestones.map(({ project, left, lane }) => {
+            permanentPdfMilestones.map(({ project, left, lane, width }) => {
               const statusColor = STATUS_COLORS[project.status] ?? '#94a3b8'
               return (
                 <button
@@ -193,6 +203,7 @@ export function GalleryLane({
                     left,
                     top: lane * PERMANENT_PDF_LANE_HEIGHT + 9,
                     '--permanent-milestone-color': statusColor,
+                    '--permanent-milestone-width': `${width}px`,
                   } as CSSProperties}
                   onClick={() => setSelectedProject(project.id)}
                 >
