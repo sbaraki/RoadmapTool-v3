@@ -94,8 +94,8 @@ export function ProjectBar({
     data: { ...dragData, action: 'resize-end' },
   })
 
-  const containerLeft = isRange ? left - preWidth : left - width / 2
-  const containerWidth = isRange ? width + preWidth + postWidth : width
+  const containerLeft = isRange ? left - preWidth : left
+  const containerWidth = isRange ? width + preWidth + postWidth : 1
   const runLabel = `${format(projStart, 'MMM yyyy')} - ${format(projEnd, 'MMM yyyy')}`
   const showDatePillsAsTbc = project.showDatePillsAsTbc ?? false
   const openDateLabel = showDatePillsAsTbc ? 'TBC' : format(projStart, 'MMM d').toUpperCase()

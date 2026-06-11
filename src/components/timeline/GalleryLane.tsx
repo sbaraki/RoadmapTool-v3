@@ -20,6 +20,8 @@ const PERMANENT_PDF_LANE_HEIGHT = 22
 const PERMANENT_PDF_MARKER_GAP = 12
 const PERMANENT_PDF_TITLE_CHARACTER_WIDTH = 6.8
 const PERMANENT_PDF_MARKER_CHROME_WIDTH = 18
+const PERMANENT_PDF_MARKER_ICON_SIZE = 8
+const COLLAPSED_SINGLE_MARKER_SIZE = 10
 
 function getPermanentPdfMilestoneWidth(project: ExhibitionProject) {
   return Math.max(
@@ -148,7 +150,7 @@ export function GalleryLane({
                 <div
                   key={project.id}
                   className="collapsed-project-single absolute flex items-center gap-1.5 cursor-pointer hover:opacity-80"
-                  style={{ left }}
+                  style={{ left: left - COLLAPSED_SINGLE_MARKER_SIZE / 2 }}
                   onClick={() => setSelectedProject(project.id)}
                 >
                   <div
@@ -200,7 +202,7 @@ export function GalleryLane({
                   type="button"
                   className="permanent-pdf-milestone absolute flex items-start gap-1.5 text-left"
                   style={{
-                    left,
+                    left: left - PERMANENT_PDF_MARKER_ICON_SIZE / 2,
                     top: lane * PERMANENT_PDF_LANE_HEIGHT + 9,
                     '--permanent-milestone-color': statusColor,
                     '--permanent-milestone-width': `${width}px`,
