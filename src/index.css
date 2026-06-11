@@ -327,15 +327,21 @@ body {
 /* ── Single-date (diamond) marker ── */
 .milestone-project-marker {
   position: absolute;
+  left: 0;
   top: 50%;
-  transform: translate(-50%, -50%);
+  width: max-content;
+  height: 18px;
+  transform: translateY(-50%);
   cursor: pointer;
   z-index: 5;
 }
 .milestone-project-diamond {
+  position: absolute;
+  left: 0;
+  top: 50%;
   width: 10px;
   height: 10px;
-  transform: rotate(45deg);
+  transform: translate(-50%, -50%) rotate(45deg);
   border-radius: 1.5px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.18);
   transition: box-shadow 150ms;
@@ -349,7 +355,7 @@ body {
 
 .milestone-project-label {
   position: absolute;
-  left: 16px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -561,6 +567,7 @@ body {
 }
 
 .permanent-pdf-milestone-dot {
+  box-sizing: border-box;
   width: 8px;
   height: 8px;
   margin-top: 2px;
@@ -872,7 +879,7 @@ body {
 .timeline-container.pdf-export-fill .permanent-pdf-milestone::before {
   content: '';
   position: absolute;
-  left: 3px;
+  left: 4px;
   top: -9px;
   height: 8px;
   border-left: 1px solid rgba(100, 116, 139, 0.48);
