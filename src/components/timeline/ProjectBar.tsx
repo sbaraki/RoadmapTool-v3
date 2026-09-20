@@ -59,7 +59,8 @@ export function ProjectBar({
     () =>
       project.phases.filter(ph => {
         const pt = phaseTypes.find(t => t.id === ph.typeId)
-        return phaseKey(phaseLabel(ph.label, pt)) === 'deinstall'
+        const key = phaseKey(phaseLabel(ph.label, pt))
+        return key === 'deinstall' || key === 'delivery'
       }),
     [project.phases, phaseTypes],
   )

@@ -38,20 +38,22 @@ export function ProjectDetailPanel() {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
-    if (project) {
-      // Local edit buffers intentionally reset when a different project is selected.
+    const current = useStore.getState().exhibitions.find(p => p.id === selectedProjectId)
+    if (current) {
+      // Local edit buffers reset only when a different project is selected,
+      // not on every store update, so in-progress typing is never clobbered.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTitle(project.title)
-      setStatus(project.status)
-      setGallery(project.gallery)
-      setScheduleMode(project.scheduleMode)
-      setStartDate(project.startDate)
-      setEndDate(project.endDate)
-      setDescription(project.description ?? '')
+      setTitle(current.title)
+      setStatus(current.status)
+      setGallery(current.gallery)
+      setScheduleMode(current.scheduleMode)
+      setStartDate(current.startDate)
+      setEndDate(current.endDate)
+      setDescription(current.description ?? '')
       setErrors({})
       setConfirmDelete(false)
     }
-  }, [project])
+  }, [selectedProjectId])
 
   const validateAndSave = useCallback(() => {
     if (!project) return

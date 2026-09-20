@@ -186,8 +186,12 @@ export function Header() {
             disabled={exporting}
             onClick={async () => {
               setExporting(true)
-              await exportTimelineToPdf()
-              setExporting(false)
+              try {
+                const ok = await exportTimelineToPdf()
+                if (!ok) window.alert('PDF export failed. Try zooming out or collapsing lanes, then export again.')
+              } finally {
+                setExporting(false)
+              }
             }}
           >
             {exporting ? <LoaderCircle size={18} className="animate-spin" /> : <Printer size={18} />}
