@@ -15,6 +15,7 @@ export default function PortfolioTimeline() {
 
   const loadFromStorage = useStore(s => s.loadFromStorage)
   const loadCloudSession = useStore(s => s.loadCloudSession)
+  const startCloudSessionListener = useStore(s => s.startCloudSessionListener)
   const seedData = useStore(s => s.seedData)
 
   const loadedRef = useRef(false)
@@ -29,6 +30,11 @@ export default function PortfolioTimeline() {
       loadedRef.current = true
     }
   }, [loadCloudSession, loadFromStorage, seedData])
+
+  useEffect(() => {
+    const unsubscribe = startCloudSessionListener()
+    return unsubscribe
+  }, [startCloudSessionListener])
 
   return (
     <>

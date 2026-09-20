@@ -2,6 +2,7 @@ import { toCanvas } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { format, parseISO } from 'date-fns'
 import { useStore } from '../store/useStore'
+import { chooseExportPixelRatios } from './exportSize'
 
 const LEDGER_WIDTH_IN = 17
 const LEDGER_HEIGHT_IN = 11
@@ -117,16 +118,17 @@ function nextFrame() {
   return new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 }
 
-export async function exportTimelineToPdf(): Promise<void> {
+export async function exportTimelineToPdf(): Promise<boolean> {
   const container = document.querySelector('.timeline-container') as HTMLElement | null
-  if (!container) return
+  if (!container) return false
 
   const origOverflow = container.style.overflow
   const imageAreaW = LEDGER_WIDTH_IN - PAGE_MARGIN_IN * 2
   const imageAreaH = LEDGER_HEIGHT_IN - PAGE_MARGIN_IN * 2 - METADATA_HEIGHT_IN - METADATA_GAP_IN - FOOTER_HEIGHT_IN
   const imageAreaAspect = imageAreaW / imageAreaH
 
-  let canvas: HTMLCanvasElement
+  let canvas: HTMLCanvasElement | undefined
+  let usedPixelRatio = 1
 
   try {
     container.style.overflow = 'visible'
@@ -136,24 +138,53 @@ export async function exportTimelineToPdf(): Promise<void> {
     const captureWidth = Math.ceil(Math.max(container.scrollWidth, container.offsetWidth))
     const captureHeight = Math.ceil(Math.max(container.scrollHeight, container.offsetHeight))
 
-    canvas = await toCanvas(container, {
-      backgroundColor: '#ffffff',
-      pixelRatio: 3,
-      skipAutoScale: true,
-      width: captureWidth,
-      height: captureHeight,
-      style: {
-        width: `${captureWidth}px`,
-        height: `${captureHeight}px`,
-        overflow: 'visible',
-      },
-    })
+    let lastError: unknown = null
+    for (const ratio of chooseExportPixelRatios(captureWidth, captureHeight)) {
+      try {
+        canvas = await toCanvas(container, {
+          backgroundColor: '#ffffff',
+          pixelRatio: ratio,
+          skipAutoScale: true,
+          width: captureWidth,
+          height: captureHeight,
+          style: {
+            width: `${captureWidth}px`,
+            height: `${captureHeight}px`,
+            overflow: 'visible',
+          },
+        })
+        usedPixelRatio = ratio
+        lastError = null
+        break
+      } catch (error) {
+        lastError = error
+        console.warn(`PDF capture failed at pixelRatio ${ratio}, retrying lower`, error)
+      }
+    }
+    if (!canvas) {
+      console.error('PDF export failed during timeline capture', lastError)
+      return false
+    }
+    if (usedPixelRatio < 3) {
+      console.info(`PDF export captured at reduced pixelRatio ${usedPixelRatio} to fit memory budget`)
+    }
+  } catch (error) {
+    console.error('PDF export failed during timeline capture', error)
+    return false
   } finally {
     container.style.overflow = origOverflow
     resetExportSizing(container)
   }
 
-  const imgData = canvas.toDataURL('image/jpeg', 0.95)
+  if (!canvas) return false
+
+  let imgData: string
+  try {
+    imgData = canvas.toDataURL('image/jpeg', 0.95)
+  } catch (error) {
+    console.error('PDF export failed while encoding the timeline image', error)
+    return false
+  }
 
   const pdf = new jsPDF({
     orientation: 'landscape',
@@ -178,4 +209,5 @@ export async function exportTimelineToPdf(): Promise<void> {
   const dateStr = now.toISOString().slice(0, 10)
 
   pdf.save(`RAM_ExhibitionsRoadmap_${dateStr}.pdf`)
+  return true
 }

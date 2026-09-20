@@ -23,9 +23,40 @@ export async function getCloudSession(): Promise<CloudSessionResult> {
   const client = getSupabaseClient()
   if (!client) return { success: false, error: 'Supabase is not configured' }
 
-  const { data, error } = await client.auth.getUser()
+  const { data, error } = await client.auth.getSession()
   if (error) return { success: false, error: error.message }
-  return { success: true, user: data.user }
+  if (!data.session?.user) return { success: true, user: null }
+  const { data: userData, error: userError } = await client.auth.getUser()
+  if (userError) return { success: false, error: userError.message }
+  return { success: true, user: userData.user }
+}
+
+export function subscribeToCloudAuth(onChange: (user: User | null) => void): () => void {
+  const client = getSupabaseClient()
+  if (!client) return () => undefined
+
+  const { data } = client.auth.onAuthStateChange((_event, session) => {
+    onChange(session?.user ?? null)
+  })
+  return () => data.subscription.unsubscribe()
+}
+
+export async function getCloudBackupTimestamp(): Promise<string | null> {
+  const client = getSupabaseClient()
+  if (!client) return null
+
+  const { data: sessionData } = await client.auth.getSession()
+  const userId = sessionData.session?.user.id
+  if (!userId) return null
+
+  const { data, error } = await client
+    .from('scenario_libraries')
+    .select('updated_at')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error || !data?.updated_at) return null
+  return data.updated_at as string
 }
 
 export async function sendMagicLink(email: string): Promise<CloudResult> {

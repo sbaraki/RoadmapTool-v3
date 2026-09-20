@@ -1,19 +1,25 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-let client: SupabaseClient | null | undefined
+let client: SupabaseClient | null = null
+let initialized = false
+
+export function resetSupabaseClient(): void {
+  client = null
+  initialized = false
+}
 
 export function getSupabaseClient(): SupabaseClient | null {
-  if (client !== undefined) return client
+  if (initialized) return client
 
   const url = import.meta.env.VITE_SUPABASE_URL
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   if (!url || !anonKey) {
-    client = null
-    return client
+    return null
   }
 
   client = createClient(url, anonKey)
+  initialized = true
   return client
 }
 

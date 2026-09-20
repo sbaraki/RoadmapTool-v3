@@ -16,14 +16,18 @@ import { addMonthsToString, formatDate } from '../utils/date'
 import { DEFAULT_GALLERIES, DEFAULT_PHASE_TYPES } from '../data/defaults'
 import {
   backupScenarioLibrary,
+  getCloudBackupTimestamp,
   getCloudSession,
   restoreScenarioLibrary,
   sendMagicLink,
   signOutCloud,
+  subscribeToCloudAuth,
 } from '../utils/supabaseSync'
 
 const STORAGE_KEY = 'portfolio_tool_v2'
 const DEFAULT_SCENARIO_NAME = 'Current Plan'
+const HISTORY_COALESCE_WINDOW_MS = 1200
+let lastHistoryCommitAt = 0
 
 type CloudRestoreMode = 'replace' | 'merge'
 
@@ -94,7 +98,7 @@ interface StoreState {
   history: HistorySnapshot[]
   future: HistorySnapshot[]
 
-  commitHistory: () => void
+  commitHistory: (options?: { coalesce?: boolean }) => void
   undo: () => void
   redo: () => void
   canUndo: () => boolean
@@ -153,6 +157,7 @@ interface StoreState {
 
   setCloudEmail: (email: string) => void
   loadCloudSession: () => Promise<void>
+  startCloudSessionListener: () => () => void
   sendCloudMagicLink: () => Promise<void>
   signOutOfCloud: () => Promise<void>
   backupToCloud: () => Promise<void>
@@ -258,13 +263,18 @@ function normalizeScenarioLibrary(data: unknown): ScenarioLibrary {
   return createScenarioLibrary(normalizePortfolioData(data as Partial<PortfolioData>))
 }
 
+function timestampOf(value: string | undefined): number {
+  const time = value ? new Date(value).getTime() : NaN
+  return Number.isNaN(time) ? 0 : time
+}
+
 function mergeScenarioLibraries(local: ScenarioLibrary, cloud: ScenarioLibrary): ScenarioLibrary {
   const scenarios = new Map<string, ScenarioSave>()
 
   local.scenarios.forEach(scenario => scenarios.set(scenario.id, scenario))
   cloud.scenarios.forEach(scenario => {
     const existing = scenarios.get(scenario.id)
-    if (!existing || new Date(scenario.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+    if (!existing || timestampOf(scenario.updatedAt) > timestampOf(existing.updatedAt)) {
       scenarios.set(scenario.id, scenario)
     }
   })
@@ -323,7 +333,14 @@ export const useStore = create<StoreState>()((set, get) => ({
 
   ...createInitialHistoryState(),
 
-  commitHistory: () => {
+  commitHistory: (options) => {
+    const now = Date.now()
+    if (options?.coalesce && now - lastHistoryCommitAt < HISTORY_COALESCE_WINDOW_MS) {
+      if (get().future.length > 0) set({ future: [] })
+      lastHistoryCommitAt = now
+      return
+    }
+    lastHistoryCommitAt = now
     const { museumName, galleries, phaseTypes, exhibitions, keyDates, history } = get()
     const snapshot = createSnapshot(museumName, galleries, phaseTypes, exhibitions, keyDates)
     set({ history: [...history.slice(-49), snapshot], future: [] })
@@ -357,7 +374,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   canRedo: () => get().future.length > 0,
 
   setMuseumName: (name) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set({ museumName: name.toUpperCase() })
   },
 
@@ -395,7 +412,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   updateGallery: (id, updates) => {
     const { galleries } = get()
     const oldGallery = galleries.find(g => g.id === id)
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       galleries: s.galleries.map(g => g.id === id ? { ...g, ...updates } : g),
       exhibitions: updates.name && oldGallery
@@ -417,7 +434,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   updatePhaseType: (id, updates) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       phaseTypes: s.phaseTypes.map(pt => pt.id === id ? { ...pt, ...updates } : pt),
       exhibitions: updates.label
@@ -458,7 +475,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   updateProject: (id, updates) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       exhibitions: s.exhibitions.map(p =>
         p.id === id ? { ...p, ...updates } : p
@@ -494,11 +511,12 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   updateKeyDate: (id, updates) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       keyDates: s.keyDates.map(keyDate => {
         if (keyDate.id !== id) return keyDate
         const next = { ...keyDate, ...updates }
+        if (!next.startDate || !/^\d{4}-\d{2}-\d{2}$/.test(next.startDate)) return keyDate
         if (next.endDate < next.startDate) next.endDate = next.startDate
         return next
       }),
@@ -573,7 +591,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   updateCheckpoint: (projectId, checkpointId, updates) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       exhibitions: s.exhibitions.map(p =>
         p.id === projectId
@@ -609,7 +627,7 @@ export const useStore = create<StoreState>()((set, get) => ({
   },
 
   updatePhase: (projectId, phaseId, updates) => {
-    get().commitHistory()
+    get().commitHistory({ coalesce: true })
     set(s => ({
       exhibitions: s.exhibitions.map(p =>
         p.id === projectId
@@ -734,7 +752,20 @@ export const useStore = create<StoreState>()((set, get) => ({
     get().saveToStorage()
     const raw = localStorage.getItem(STORAGE_KEY)
     const currentLibrary = normalizeScenarioLibrary(raw ? JSON.parse(raw) : createPortfolioData(get()))
-    const baseData = normalizePortfolioData({})
+    const state = get()
+    const baseData = normalizePortfolioData({
+      museumName: state.museumName,
+      galleries: state.galleries,
+      phaseTypes: state.phaseTypes,
+      exhibitions: [],
+      keyDates: [],
+      timelineStartDate: state.timelineStartDate,
+      timelineEndDate: state.timelineEndDate,
+      monthWidth: state.monthWidth,
+      collapsedLanes: [],
+      showMilestones: state.showMilestones,
+      sidebarOpen: state.sidebarOpen,
+    })
     const scenario = createScenario(`Scenario ${currentLibrary.scenarios.length + 1}`, baseData)
     const scenarios = [...currentLibrary.scenarios, scenario]
     const library = { version: 3 as const, activeScenarioId: scenario.id, scenarios }
@@ -815,14 +846,32 @@ export const useStore = create<StoreState>()((set, get) => ({
     set({ cloudStatus: 'loading', cloudError: null })
     const result = await getCloudSession()
     if (result.success) {
+      const cloudUpdatedAt = result.user ? await getCloudBackupTimestamp() : null
       set({
         cloudUserEmail: result.user?.email ?? null,
         cloudEmail: result.user?.email ?? get().cloudEmail,
+        cloudUpdatedAt,
         cloudStatus: 'idle',
       })
     } else {
       set({ cloudStatus: 'error', cloudError: result.error ?? null })
     }
+  },
+
+  startCloudSessionListener: () => {
+    return subscribeToCloudAuth((user) => {
+      set({
+        cloudUserEmail: user?.email ?? null,
+        cloudEmail: user?.email ?? get().cloudEmail,
+      })
+      if (user) {
+        void getCloudBackupTimestamp().then((cloudUpdatedAt) => {
+          if (cloudUpdatedAt) set({ cloudUpdatedAt })
+        })
+      } else {
+        set({ cloudUpdatedAt: null })
+      }
+    })
   },
 
   sendCloudMagicLink: async () => {

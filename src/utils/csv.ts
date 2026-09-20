@@ -29,7 +29,7 @@ export function generateCsv(projects: ExhibitionProject[]): string {
       'Project Title': project.title,
       Status: project.status,
       Gallery: project.gallery,
-      'Item Type': 'Project',
+      'Item Type': 'Project Main',
       'Item Name': project.title,
       'Start Date': project.startDate,
       'End Date': project.endDate,
@@ -38,12 +38,14 @@ export function generateCsv(projects: ExhibitionProject[]): string {
     })
 
     for (const phase of project.phases) {
+      const phaseKey = phase.label.trim().toLowerCase()
+      const isPost = phaseKey === 'deinstall' || phaseKey === 'delivery'
       rows.push({
         'Project ID': project.exhibitionId,
         'Project Title': project.title,
         Status: project.status,
         Gallery: project.gallery,
-        'Item Type': 'Phase',
+        'Item Type': isPost ? 'Phase (Post)' : 'Phase (Pre)',
         'Item Name': phase.label,
         'Start Date': '',
         'End Date': '',
